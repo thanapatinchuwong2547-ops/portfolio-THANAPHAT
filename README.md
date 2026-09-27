@@ -1,4 +1,4 @@
-﻿# Tactical Industrial HUD Portfolio — นายธนภัทร อินทร์ชูวงศ์ (โอ)
+# Tactical Industrial HUD Portfolio — นายธนภัทร อินทร์ชูวงศ์ (โอ)
 ### นักศึกษาหลักสูตรครุศาสตร์อุตสาหกรรมบัณฑิต (ค.อ.บ.) สาขาครุศาสตร์อุตสาหกรรมไฟฟ้า
 ### คณะครุศาสตร์อุตสาหกรรม มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น (ไทย-เยอรมัน)
 **รหัสนักศึกษา:** `68322110081-8`
@@ -47,16 +47,28 @@ portfolio/
 
 ## 🚀 ขั้นตอนการนำขึ้น Vercel
 
-1. เข้าเว็บไซต์ [Vercel](https://vercel.com/) และล็อกอินด้วยบัญชี GitHub
-2. กดปุ่ม **"Add New..."** -> **"Project"**
-3. เลือกคลังเก็บโค้ด `portfolio-THANAPHAT` แล้วกด **"Import"**
-4. Vercel จะตรวจจับและ Deploy เว็บไซต์ให้ทันทีโดยอัตโนมัติ ได้ลิงก์ `.vercel.app` ใช้งานได้ตลอด 24 ชั่วโมง
+### วิธีที่ 1: คลิก Deploy อัตโนมัติในคลิกเดียว (1-Click Deploy)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fthanapatinchuwong2547-ops%2Fportfolio-THANAPHAT)
+
+หรือคลิกลิงก์ตรง: [👉 นำเข้าโครงการสู่ Vercel Dashboard ทันที](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fthanapatinchuwong2547-ops%2Fportfolio-THANAPHAT)
+
+### วิธีที่ 2: นำเข้าผ่าน Vercel Dashboard
+1. เข้าเว็บไซต์ [Vercel Dashboard](https://vercel.com/new) และล็อกอินด้วยบัญชี GitHub
+2. ภายใต้หัวข้อ **"Import Git Repository"** เลือกคลังโค้ด `portfolio-THANAPHAT` แล้วกด **"Import"**
+3. ไม่ต้องตั้งค่าเพิ่มเติม (Zero Configuration) กดปุ่ม **"Deploy"**
+4. Vercel จะตรวจจับและ Build เว็บไซต์ให้ทันที พร้อมมอบโดเมน `.vercel.app` ความเร็วสูงระดับ Edge ทั่วโลก
 
 ---
 
-## 🗄️ การเปิดใช้งาน Supabase Cloud (ทางเลือกเพิ่มเติม)
+## 🗄️ การเปิดใช้งาน Supabase Cloud (Cloud Database & Media Storage)
 
-1. เข้าไปที่ [Supabase Dashboard](https://supabase.com/dashboard) แล้วสร้าง New Project
-2. ไปที่เมนู **SQL Editor** แล้วคัดลอกคำสั่งจากไฟล์ `supabase-schema.sql` ไปวางแล้วกด **Run**
-3. ไปที่เมนู **Project Settings** -> **API** เพื่อนำ **Project URL** และ **Anon Key**
-4. ล็อกอินเข้าโหมดผู้ดูแลในเว็บ (กด <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>P</kbd>) -> กดปุ่ม **"Supabase Cloud"** แล้ววางค่าเพื่อเชื่อมต่อ
+1. เข้าไปที่ [Supabase Dashboard](https://supabase.com/dashboard) แล้วกด **New Project**
+2. ไปที่เมนู **SQL Editor** แล้วคัดลอกคำสั่งทั้งหมดจากไฟล์ `supabase-schema.sql` ไปวางแล้วกด **Run**
+3. ไปที่เมนู **Project Settings** -> **API** เพื่อคัดลอก:
+   - **Project URL** (เช่น `https://xyzcompany.supabase.co`)
+   - **anon public Key** (โทเคนสาธารณะ)
+4. เปิดหน้าเว็บ Portfolio -> กดคีย์ลัด <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>P</kbd>
+   - Username: `O’Coner`
+   - Password: `thanapat4444`
+5. กดปุ่ม **"Supabase Cloud"** บนแถบผู้ดูแลด้านล่าง -> วางค่า URL และ Anon Key -> กด **"ทดสอบและเชื่อมต่อ"** -> กด **"อัปโหลดข้อมูลขึ้น Supabase"**
+6. ข้อมูลทั้งหมดจะถูกจัดเก็บบน Cloud Database และซิงค์สดแบบ Realtime ไม่ว่าเปิดจาก Vercel, มือถือ หรือคอมพิวเตอร์เครื่องใดก็ตาม

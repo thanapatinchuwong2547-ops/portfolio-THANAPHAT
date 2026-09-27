@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tactical Industrial HUD Portfolio - Core Engine
  * Thanaphat Inchuwong (นายธนภัทร อินทร์ชูวงศ์)
  * RMUTI Khon Kaen Campus // Electrical Industrial Education
@@ -42,8 +42,19 @@ class PortfolioApp {
 
   saveData() {
     try {
+      this.data.lastUpdated = new Date().toISOString();
       localStorage.setItem(this.storageKey, JSON.stringify(this.data));
       this.updateStatusTelemetry();
+
+      if (this.supabaseClient) {
+        this.supabaseClient
+          .from("portfolio_data")
+          .upsert({ id: "main_data", payload: this.data, updated_at: new Date() })
+          .then(({ error }) => {
+            if (!error) this.updateStatusTelemetry("SUPABASE: SYNCED");
+          })
+          .catch((e) => console.warn("Supabase auto-sync error:", e));
+      }
     } catch (e) {
       console.error("Failed to save data locally:", e);
     }
@@ -1417,15 +1428,51 @@ class PortfolioApp {
     }
   }
 
-  initSupabase() {
+  async initSupabase() {
     const s = this.data.siteSettings.supabase;
     if (s && s.url && s.anonKey && window.supabase) {
       try {
         this.supabaseClient = window.supabase.createClient(s.url, s.anonKey);
         this.updateStatusTelemetry("SUPABASE: CONNECTED");
+        await this.loadFromSupabase();
       } catch (e) {
         console.warn("Supabase init error:", e);
       }
+    }
+  }
+
+  async loadFromSupabase() {
+    if (!this.supabaseClient) return;
+    try {
+      const { data, error } = await this.supabaseClient
+        .from("portfolio_data")
+        .select("payload, updated_at")
+        .eq("id", "main_data")
+        .single();
+
+      if (error) {
+        console.warn("Supabase load fallback:", error.message);
+        return;
+      }
+
+      if (data && data.payload) {
+        const remoteUpdated = new Date(data.updated_at || 0).getTime();
+        const localUpdated = new Date(this.data.lastUpdated || 0).getTime();
+        if (remoteUpdated >= localUpdated) {
+          console.log("[Supabase] Synced latest portfolio data from Cloud");
+          this.data = {
+            ...window.DEFAULT_PORTFOLIO_DATA,
+            ...data.payload,
+            profile: { ...window.DEFAULT_PORTFOLIO_DATA.profile, ...(data.payload.profile || {}) },
+            siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(data.payload.siteSettings || {}) }
+          };
+          localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+          this.renderAll();
+          this.updateStatusTelemetry("SUPABASE: CLOUD_SYNCED");
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load from Supabase:", e);
     }
   }
 
