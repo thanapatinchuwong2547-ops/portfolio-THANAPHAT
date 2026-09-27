@@ -418,9 +418,9 @@ body.scanlines-enabled::after {
 
 .hero-headline {
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  font-size: clamp(1.6rem, 3.4vw, 2.9rem);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 1.25rem;
@@ -428,8 +428,24 @@ body.scanlines-enabled::after {
 }
 
 .hero-headline span.highlight {
+  display: block;
   color: var(--accent-primary);
   text-shadow: 0 0 25px var(--accent-glow);
+  white-space: nowrap;
+}
+
+.hero-headline span.hero-white-title {
+  display: block;
+  color: #ffffff;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  margin-top: 0.35rem;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .hero-headline span.hero-white-title {
+  color: #1a1d24;
+  text-shadow: none;
 }
 
 .hero-lede {

@@ -22,12 +22,17 @@ class PortfolioApp {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
+        const merged = {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
           profile: { ...window.DEFAULT_PORTFOLIO_DATA.profile, ...(parsed.profile || {}) },
           siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(parsed.siteSettings || {}) }
         };
+        if (!merged.profile.heroWhiteTitle || merged.profile.heroTitle.includes("\n") || merged.profile.heroTitle === "ENGINEERING POWER.") {
+          merged.profile.heroTitle = "WELCOME TO PORTFOLIO";
+          merged.profile.heroWhiteTitle = "THANAPHAT INCHUWONG";
+        }
+        return merged;
       }
     } catch (e) {
       console.warn("Could not parse saved portfolio data, using defaults:", e);
