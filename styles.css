@@ -1,0 +1,1553 @@
+﻿/* ==========================================================================
+   Tactical Industrial HUD Portfolio - Thanaphat Inchuwong (นายธนภัทร อินทร์ชูวงศ์)
+   Inspired by Tactical Instrumentation & Viewfinder Control Desks
+   Electrical Industrial Education // มทร.อีสาน วิทยาเขตขอนแก่น
+   ========================================================================== */
+
+:root {
+  /* Dark Mode Palette (Default) */
+  --bg-void: #07090e;
+  --bg-chassis: #0d1017;
+  --bg-panel: #131822;
+  --bg-panel-hover: #19202e;
+  --bg-elevated: #1e2638;
+
+  --border-hairline: #232b3d;
+  --border-active: rgba(224, 90, 43, 0.5);
+  --border-focus: #ff9e1b;
+
+  --text-primary: #f3f6fc;
+  --text-secondary: #9aa5bc;
+  --text-muted: #5e6b82;
+
+  /* Warm Industrial Accent Tokens */
+  --accent-primary: #e05a2b;       /* Warm Brick / Terracotta */
+  --accent-primary-hover: #f1693a;
+  --accent-amber: #ff9e1b;         /* Tactical Amber */
+  --accent-gold: #ffb800;          /* Hazard Yellow/Gold */
+  --accent-glow: rgba(224, 90, 43, 0.25);
+  --accent-dim: rgba(224, 90, 43, 0.12);
+
+  /* Status Signals */
+  --signal-rec: #ff3344;
+  --signal-online: #10b981;
+  --signal-telemetry: #06b6d4;
+
+  /* Typography */
+  --font-display: 'Chakra Petch', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'IBM Plex Sans Thai', 'Inter', sans-serif;
+
+  /* Tactical Frame Dimensions */
+  --hud-corner-size: 14px;
+  --hud-corner-thick: 2px;
+}
+
+/* Light Mode Overrides */
+[data-theme="light"] {
+  --bg-void: #f5f1eb;
+  --bg-chassis: #ffffff;
+  --bg-panel: #fcfbf9;
+  --bg-panel-hover: #f4efe8;
+  --bg-elevated: #ebe3d8;
+
+  --border-hairline: #dcd3c7;
+  --border-active: rgba(192, 57, 43, 0.6);
+  --border-focus: #c0392b;
+
+  --text-primary: #191c21;
+  --text-secondary: #586170;
+  --text-muted: #8b95a5;
+
+  --accent-primary: #b8431e;
+  --accent-primary-hover: #9c3514;
+  --accent-amber: #d35400;
+  --accent-gold: #e67e22;
+  --accent-glow: rgba(184, 67, 30, 0.15);
+  --accent-dim: rgba(184, 67, 30, 0.08);
+
+  --signal-rec: #dc2626;
+  --signal-online: #059669;
+  --signal-telemetry: #0284c7;
+}
+
+/* Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Scanline CRT Overlay (Toggleable in CMS) */
+body.scanlines-enabled::after {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Tactical HUD Reticle Helper Classes */
+.hud-frame {
+  position: relative;
+  background-color: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+}
+
+.hud-reticle {
+  position: relative;
+}
+
+.hud-reticle::before,
+.hud-reticle::after {
+  content: "";
+  position: absolute;
+  width: var(--hud-corner-size);
+  height: var(--hud-corner-size);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hud-reticle::before {
+  top: -1px;
+  left: -1px;
+  border-top: var(--hud-corner-thick) solid var(--accent-primary);
+  border-left: var(--hud-corner-thick) solid var(--accent-primary);
+}
+
+.hud-reticle::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: var(--hud-corner-thick) solid var(--accent-primary);
+  border-right: var(--hud-corner-thick) solid var(--accent-primary);
+}
+
+.hud-reticle-tr {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: var(--hud-corner-size);
+  height: var(--hud-corner-size);
+  border-top: var(--hud-corner-thick) solid var(--accent-primary);
+  border-right: var(--hud-corner-thick) solid var(--accent-primary);
+  pointer-events: none;
+}
+
+.hud-reticle-bl {
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: var(--hud-corner-size);
+  height: var(--hud-corner-size);
+  border-bottom: var(--hud-corner-thick) solid var(--accent-primary);
+  border-left: var(--hud-corner-thick) solid var(--accent-primary);
+  pointer-events: none;
+}
+
+/* Hazard Warning Stripe Gradient */
+.hazard-stripes {
+  height: 12px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #0b0d12,
+    #0b0d12 12px,
+    var(--accent-primary) 12px,
+    var(--accent-primary) 24px
+  );
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.hazard-stripes-light {
+  height: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #ffffff,
+    #ffffff 10px,
+    var(--accent-primary) 10px,
+    var(--accent-primary) 20px
+  );
+}
+
+/* Master Layout Grid */
+.tactical-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ==========================================================================
+   1. Tactical Header & Navigation Bar
+   ========================================================================== */
+.tactical-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 16, 23, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-hairline);
+  transition: background 0.3s ease;
+}
+
+[data-theme="light"] .tactical-header {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 1rem;
+}
+
+.brand-dossier {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--accent-primary);
+  color: #ffffff;
+  padding: 4px 8px;
+  letter-spacing: 0.1em;
+  position: relative;
+}
+
+.brand-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-amber);
+  letter-spacing: 0.1em;
+}
+
+.tactical-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-link {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  letter-spacing: 0.05em;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hairline);
+  background-color: var(--accent-dim);
+}
+
+.nav-link.active {
+  color: var(--accent-amber);
+  border-color: var(--accent-primary);
+  background-color: var(--accent-dim);
+}
+
+.nav-link.active::before {
+  content: "[";
+  margin-right: 4px;
+  color: var(--accent-primary);
+}
+
+.nav-link.active::after {
+  content: "]";
+  margin-left: 4px;
+  color: var(--accent-primary);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-dim);
+}
+
+.btn-secret-login {
+  background: transparent;
+  border: 1px dashed var(--border-hairline);
+  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.btn-secret-login:hover {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+
+/* ==========================================================================
+   2. Hero Viewfinder HUD (Matching Screenshot 2026-09-27 152012.png)
+   ========================================================================== */
+.hero-viewfinder {
+  padding: 1.5rem 0 1rem 0;
+}
+
+.viewport-chassis {
+  background-color: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 2rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.4);
+}
+
+.telemetry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 2rem;
+}
+
+.telemetry-tag {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-beacon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--signal-rec);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--signal-rec);
+  animation: pulse-rec 1.2s infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.85); }
+}
+
+.timecode-val {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.hero-body {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 3rem;
+  align-items: center;
+  margin: 1.5rem 0 2.5rem 0;
+}
+
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+
+.hero-headline span.highlight {
+  color: var(--accent-primary);
+  text-shadow: 0 0 25px var(--accent-glow);
+}
+
+.hero-lede {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  max-width: 620px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-tactical {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.btn-tactical-primary {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.btn-tactical-primary:hover {
+  background-color: var(--accent-primary-hover);
+  transform: translateY(-2px);
+}
+
+.btn-tactical-ghost {
+  background-color: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-hairline);
+}
+
+.btn-tactical-ghost:hover {
+  border-color: var(--accent-amber);
+  background-color: var(--accent-dim);
+  color: var(--accent-amber);
+}
+
+.hero-badge-spec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-amber);
+  letter-spacing: 0.15em;
+  margin-top: 0.5rem;
+}
+
+/* Hero Portrait / Electrical Instrument Hologram */
+.hero-visual-pane {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hud-interactive-viewport {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  padding: 1.25rem;
+  position: relative;
+}
+
+.hologram-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--border-hairline);
+  padding-bottom: 0.4rem;
+}
+
+.portrait-frame {
+  width: 100%;
+  height: 280px;
+  background: #090c12;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-hairline);
+  overflow: hidden;
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.portrait-img.active {
+  display: block;
+}
+
+.portrait-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+  gap: 12px;
+  text-align: center;
+  padding: 1rem;
+}
+
+.portrait-placeholder i {
+  font-size: 3.5rem;
+  color: var(--accent-primary);
+  opacity: 0.7;
+}
+
+.portrait-spec-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(13, 16, 23, 0.85);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-amber);
+  border-top: 1px solid var(--border-hairline);
+}
+
+/* Segmented Telemetry Scale Bar (W [||||||] T from Screenshot) */
+.gauge-scale-wrapper {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent-amber);
+  letter-spacing: 0.1em;
+}
+
+.segmented-bars {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.seg-bar {
+  width: 4px;
+  height: 18px;
+  background-color: var(--border-hairline);
+  transition: all 0.2s ease;
+}
+
+.seg-bar.active {
+  background-color: var(--accent-amber);
+  box-shadow: 0 0 6px var(--accent-amber);
+}
+
+.seg-bar.center-indicator {
+  height: 26px;
+  background-color: var(--accent-primary);
+}
+
+/* ==========================================================================
+   3. Modular 4-Panel Dashboard Grid (from Screenshot)
+   ========================================================================== */
+.modular-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin: 1.5rem 0 3rem 0;
+}
+
+.dash-panel {
+  background-color: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+}
+
+.panel-code {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Panel 1: System Highlights (Accordion) */
+.specs-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spec-item {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  transition: all 0.2s ease;
+}
+
+.spec-header {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.spec-header:hover {
+  color: var(--accent-amber);
+  background: var(--accent-dim);
+}
+
+.spec-content {
+  display: none;
+  padding: 8px 12px 12px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  border-top: 1px dashed var(--border-hairline);
+}
+
+.spec-item.open .spec-content {
+  display: block;
+}
+
+.spec-item.open .toggle-icon {
+  transform: rotate(45deg);
+  color: var(--accent-primary);
+}
+
+/* Panel 2: In The Field (Video / Media Preview) */
+.field-media-frame {
+  position: relative;
+  background: #090c12;
+  border: 1px solid var(--border-hairline);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.field-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.field-media-frame:hover .field-media-img {
+  opacity: 1;
+}
+
+.play-overlay-btn {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(224, 90, 43, 0.85);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(224, 90, 43, 0.6);
+  transition: all 0.2s ease;
+}
+
+.play-overlay-btn:hover {
+  transform: scale(1.1);
+  background: var(--accent-primary);
+}
+
+.field-caption {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* Panel 3: Field Notes (Logs & Case Studies) */
+.field-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-hairline);
+}
+
+.note-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.note-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-amber);
+}
+
+.note-arrow {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.note-arrow:hover {
+  transform: translateX(4px);
+  color: var(--accent-primary);
+}
+
+/* Panel 4: System Overview (CAD / Blueprint Wireframe) */
+.cad-blueprint-frame {
+  position: relative;
+  background: #06080d;
+  border: 1px solid var(--border-hairline);
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.blueprint-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.cad-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   4. Section Containers & Heading Styles
+   ========================================================================== */
+.tactical-section {
+  padding: 4rem 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.section-counter {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   5. Personal Information (ข้อมูลส่วนตัว)
+   ========================================================================== */
+.profile-dossier-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2.5rem;
+}
+
+.profile-card {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar-box {
+  width: 220px;
+  height: 220px;
+  background: var(--bg-panel);
+  border: 2px solid var(--accent-primary);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-trigger {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 6px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  display: none;
+}
+
+body.admin-mode .avatar-upload-trigger {
+  display: block;
+}
+
+.profile-name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.profile-nick {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent-amber);
+  margin-bottom: 1rem;
+}
+
+.profile-spec-table {
+  width: 100%;
+  border-top: 1px solid var(--border-hairline);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.spec-row .label {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.spec-row .val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.profile-content-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.academic-bio-box {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.75rem;
+}
+
+.academic-bio-box h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--accent-amber);
+  margin-bottom: 1rem;
+}
+
+.bio-statement {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* Music Talent & Synthesizer Interactive Box */
+.music-talent-box {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.75rem;
+}
+
+.music-box-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.music-box-head h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fretboard-widget {
+  background: #090c12;
+  border: 1px solid var(--border-hairline);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.string-selector-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.string-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.string-btn:hover, .string-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.audio-oscilloscope-canvas {
+  width: 100%;
+  height: 80px;
+  background: #06080d;
+  display: block;
+}
+
+/* ==========================================================================
+   6. Education Timeline (ประวัติการศึกษา)
+   ========================================================================== */
+.timeline-track {
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+.timeline-track::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--accent-primary),
+    var(--accent-primary) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}
+
+.timeline-node {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+
+.timeline-node::before {
+  content: "";
+  position: absolute;
+  left: -2.5rem;
+  top: 6px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--bg-chassis);
+  border: 2px solid var(--accent-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-glow);
+  z-index: 2;
+}
+
+.timeline-node.current::before {
+  background-color: var(--accent-amber);
+  border-color: #ffffff;
+  box-shadow: 0 0 14px var(--accent-amber);
+}
+
+.timeline-card {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.5rem 1.75rem;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.edu-level {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.edu-inst {
+  font-size: 1rem;
+  color: var(--accent-amber);
+  margin-top: 2px;
+}
+
+.edu-gpa-badge {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  padding: 4px 12px;
+}
+
+.edu-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   7. Courses & Coursework Artifacts (รายวิชาและชิ้นงาน)
+   ========================================================================== */
+.category-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.filter-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+.course-card {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-code-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-amber);
+  margin-bottom: 0.5rem;
+}
+
+.course-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.course-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+
+.artifacts-header {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.6rem;
+  border-top: 1px dashed var(--border-hairline);
+  padding-top: 0.75rem;
+}
+
+.artifact-item {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.artifact-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   8. Activities & Achievements (กิจกรรมและผลงาน)
+   ========================================================================== */
+.activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.activity-card {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.activity-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-primary);
+}
+
+.activity-media-box {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #080a0f;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.activity-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--accent-primary);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  letter-spacing: 0.1em;
+}
+
+.activity-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.activity-date {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-amber);
+  margin-bottom: 0.4rem;
+}
+
+.activity-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.activity-summary {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   9. Footer (Required Thai attribution & Hazard caution bar)
+   ========================================================================== */
+.tactical-footer {
+  background-color: var(--bg-chassis);
+  border-top: 1px solid var(--border-hairline);
+  margin-top: 4rem;
+}
+
+.footer-inner {
+  padding: 3rem 1.5rem 2rem 1.5rem;
+}
+
+.footer-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.footer-attribution {
+  max-width: 650px;
+}
+
+.official-credit-box {
+  background: var(--bg-panel);
+  border-left: 3px solid var(--accent-primary);
+  padding: 1rem 1.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  line-height: 1.8;
+}
+
+.official-credit-box strong {
+  color: var(--accent-amber);
+}
+
+.footer-status-widget {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  padding: 1rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.widget-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.widget-row span:last-child {
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.footer-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px dashed var(--border-hairline);
+  padding-top: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   10. Hidden Admin Login Modal (Ctrl + Alt + P)
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(4, 6, 10, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.admin-login-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-chassis);
+  border: 1px solid var(--accent-primary);
+  padding: 2rem;
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: 0.75rem;
+}
+
+.dialog-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--accent-amber);
+  letter-spacing: 0.1em;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.05em;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ==========================================================================
+   11. Admin Floating Dock & CMS Customizer
+   ========================================================================== */
+.admin-dock {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9990;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.admin-mode .admin-dock {
+  display: flex;
+}
+
+.admin-dock-bar {
+  background: var(--bg-chassis);
+  border: 1px solid var(--accent-primary);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dock-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.75rem;
+  background: var(--accent-primary);
+  color: #fff;
+  padding: 3px 8px;
+}
+
+.btn-dock {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-dock:hover, .btn-dock.active {
+  background: var(--accent-amber);
+  color: #000;
+  border-color: var(--accent-amber);
+}
+
+/* Visual cue when inline edit is active */
+body.editable-active [data-cms-key] {
+  outline: 1px dashed var(--accent-primary);
+  outline-offset: 2px;
+  cursor: text;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .modular-dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .profile-dossier-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .modular-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .tactical-nav {
+    display: none; /* Mobile menu can be toggled */
+  }
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

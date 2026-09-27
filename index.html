@@ -1,0 +1,642 @@
+﻿<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ธนภัทร อินทร์ชูวงศ์ | Portfolio ครุศาสตร์อุตสาหกรรมไฟฟ้า มทร.อีสาน</title>
+  <meta name="description" content="แฟ้มสะสมงานและข้อมูลส่วนตัว นายธนภัทร อินทร์ชูวงศ์ (โอ) นักศึกษาครุศาสตร์อุตสาหกรรม สาขาครุศาสตร์อุตสาหกรรมไฟฟ้า มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons for Industrial Instrumentation UI -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-warm-terracotta">
+
+  <!-- Tactical Top Bar & Navigation -->
+  <header class="tactical-header">
+    <div class="tactical-container">
+      <div class="header-inner">
+        <!-- Brand & Student ID Spec -->
+        <a href="#overview" class="brand-dossier">
+          <div class="brand-badge">EE-EDU</div>
+          <div class="brand-title">
+            <span class="brand-name">THANAPHAT I.</span>
+            <span class="brand-sub">ID // 68322110081-8</span>
+          </div>
+        </a>
+
+        <!-- Desktop HUD Navigation Links -->
+        <nav class="tactical-nav">
+          <a href="#overview" class="nav-link active">OVERVIEW</a>
+          <a href="#profile" class="nav-link">BIO / ประวัติ</a>
+          <a href="#education" class="nav-link">EDUCATION / การศึกษา</a>
+          <a href="#courses" class="nav-link">COURSES / รายวิชา</a>
+          <a href="#activities" class="nav-link">ACHIEVEMENTS / ผลงาน</a>
+          <a href="#contact" class="nav-link">CONTACT / ติดต่อ</a>
+        </nav>
+
+        <!-- System Action Controls -->
+        <div class="header-actions">
+          <!-- Dark / Light Mode Toggle -->
+          <button id="themeToggleBtn" class="btn-icon" title="สลับโหมด มืด / สว่าง" aria-label="Toggle Theme">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </button>
+
+          <!-- Audio FX Toggle -->
+          <button id="soundToggleBtn" class="btn-icon" title="เปิด/ปิด เสียงเอฟเฟกต์นำทาง" aria-label="Toggle Tactical Audio">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+
+          <!-- Hidden Admin Trigger Button (Shortcut: Ctrl + Alt + P) -->
+          <button id="adminKeyholeBtn" class="btn-secret-login" title="ระบบจัดการหลังบ้าน (กด Ctrl + Alt + P)" aria-label="Admin Login">
+            <i class="fa-solid fa-lock"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Upper Hazard Accent Line -->
+    <div class="hazard-stripes-light"></div>
+  </header>
+
+  <main>
+    <!-- ====================================================================
+         1. Overview & Tactical Hero Viewfinder (from Screenshot 2026-09-27)
+         ==================================================================== -->
+    <section id="overview" class="hero-viewfinder">
+      <div class="tactical-container">
+        <div class="viewport-chassis hud-reticle">
+          <div class="hud-reticle-tr"></div>
+          <div class="hud-reticle-bl"></div>
+
+          <!-- Upper Viewfinder Telemetry Row -->
+          <div class="telemetry-row">
+            <div class="telemetry-tag">
+              <span>GRID: 400V 3Φ / 50.0Hz</span>
+              <span style="opacity: 0.4;">|</span>
+              <span>CAT IV 600V</span>
+              <span style="opacity: 0.4;">|</span>
+              <span>RMUTI KHON KAEN</span>
+            </div>
+            <div class="telemetry-tag">
+              <span class="rec-beacon"><span class="rec-dot"></span> REC ●</span>
+              <span class="timecode-val" id="telemetryTimecode">00:01:24:18</span>
+              <span style="opacity: 0.4;">|</span>
+              <span style="color: var(--signal-online);"><i class="fa-solid fa-bolt"></i> SYS: NOMINAL</span>
+            </div>
+          </div>
+
+          <!-- Viewfinder Center Body -->
+          <div class="hero-body">
+            <div class="hero-content">
+              <div class="hero-badge-spec">
+                <i class="fa-solid fa-crosshairs"></i>
+                <span data-cms-key="profile.department">สาขาครุศาสตร์อุตสาหกรรมไฟฟ้า • คณะครุศาสตร์อุตสาหกรรม</span>
+              </div>
+              <h1 class="hero-headline">
+                <span class="highlight" data-cms-key="profile.heroTitle">ENGINEERING POWER.</span><br>
+                <span>EDUCATING MINDS.</span>
+              </h1>
+              <p class="hero-lede" data-cms-key="profile.heroSubtitle">
+                แฟ้มสะสมผลงานทางวิชาการและทักษะปฏิบัติการวิศวกรรมไฟฟ้า โดย <strong>นายธนภัทร อินทร์ชูวงศ์ (โอ)</strong> มุ่งเน้นการบูรณาการระบบควบคุมอัตโนมัติในงานอุตสาหกรรม การจัดการเรียนรู้วิชาชีพช่าง และความปลอดภัยตามมาตรฐานสากล
+              </p>
+              <div class="hero-actions">
+                <a href="#courses" class="btn-tactical btn-tactical-primary">
+                  <span>สำรวจผลงานและโครงงาน</span>
+                  <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                <a href="#profile" class="btn-tactical btn-tactical-ghost">
+                  <i class="fa-solid fa-id-card"></i>
+                  <span>ข้อมูลประวัติส่วนตัว</span>
+                </a>
+                <button id="quickDossierBtn" class="btn-tactical btn-tactical-ghost" title="พิมพ์หรือบันทึกประวัติย่อ">
+                  <i class="fa-solid fa-print"></i>
+                  <span>พิมพ์ / PDF DOSSIER</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Viewport Hologram / Portrait Container -->
+            <div class="hero-visual-pane">
+              <div class="hud-interactive-viewport hud-reticle">
+                <div class="hologram-header">
+                  <span>SUBJECT: INCHUWONG_T // 68322110081-8</span>
+                  <span>STATUS: ACTIVE</span>
+                </div>
+                <div class="portrait-frame" id="heroPortraitContainer">
+                  <img src="" alt="นายธนภัทร อินทร์ชูวงศ์" id="heroPortraitImg" class="portrait-img">
+                  <div class="portrait-placeholder" id="heroPortraitPlaceholder">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-primary); font-weight: 600;">
+                      นายธนภัทร อินทร์ชูวงศ์ (โอ)
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">
+                      ครุศาสตร์อุตสาหกรรมไฟฟ้า มทร.อีสาน ขอนแก่น
+                    </div>
+                  </div>
+                  <div class="portrait-spec-overlay">
+                    <span>SPEC: B.S.Tech.Ed</span>
+                    <span>VOC_GPA: 3.78</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Segmented Precision Telemetry Scale Bar -->
+          <div class="gauge-scale-wrapper">
+            <span>W</span>
+            <div class="segmented-bars" id="telemetrySegmentedBars"></div>
+            <span>T</span>
+            <span style="margin-left: 12px; font-size: 0.75rem; color: var(--text-muted);">TUNING: 50.02 Hz</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modular 4-Panel Dashboard Grid (from Screenshot 2026-09-27) -->
+    <section class="tactical-container">
+      <div class="modular-dashboard-grid">
+        <!-- Panel 1: System Highlights (Accordion) -->
+        <div class="dash-panel hud-reticle">
+          <div class="panel-header">
+            <div class="panel-title">SYSTEM HIGHLIGHTS</div>
+            <div class="panel-code">[SPEC_01]</div>
+          </div>
+          <div class="specs-accordion" id="systemHighlightsAccordion">
+            <div class="spec-item open">
+              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
+                <span>INDUSTRIAL AUTOMATION & PLC</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="spec-content">
+                เชี่ยวชาญการเขียนโปรแกรมควบคุม PLC (Siemens / Omron), Relay Ladder Logic, การเชื่อมต่อระบบนิวแมติกส์และเซนเซอร์ตรวจจับอัตโนมัติ
+              </div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
+                <span>POWER SYSTEM & ESTIMATION</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="spec-content">
+                การออกแบบระบบไฟฟ้าโรงงานอุตสาหกรรม การคำนวณโหลด หม้อแปลงไฟฟ้า ระบบกราวด์ และการเขียนแบบแปลน Single Line Diagram ตามมาตรฐาน วสท./IEC
+              </div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
+                <span>VOCATIONAL PEDAGOGY</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="spec-content">
+                การวิเคราะห์หลักสูตรช่างเทคนิค การออกแบบแผนการจัดการเรียนรู้ 4 ขั้นตอน (Four-Step Method) และการสร้างชุดฝึกปฏิบัติการไฟฟ้าเพื่อความปลอดภัย
+              </div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
+                <span>EMBEDDED & MOTOR DRIVE</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="spec-content">
+                การควบคุมมอเตอร์ไฟฟ้ากระแสสลับ อินเวอร์เตอร์ VFD และการประยุกต์ใช้งานไมโครคอนโทรลเลอร์ IoT สำหรับมอนิเตอร์พลังงานไฟฟ้า
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: In The Field (Video / Media Preview) -->
+        <div class="dash-panel hud-reticle">
+          <div class="panel-header">
+            <div class="panel-title">IN THE FIELD</div>
+            <div class="panel-code">[FEED_02]</div>
+          </div>
+          <div class="field-media-frame" id="fieldMediaPreviewBox">
+            <img src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80" alt="Electrical Workshop Laboratory" class="field-media-img" id="fieldMediaImg">
+            <button class="play-overlay-btn" id="playFieldMediaBtn" title="ชมวิดีโอสาธิตการปฏิบัติงาน">
+              <i class="fa-solid fa-play"></i>
+            </button>
+          </div>
+          <div class="field-caption">
+            <strong>LAB WORKSHOP:</strong> ปฏิบัติการติดตั้งระบบควบคุมมอเตอร์ไฟฟ้าและตรวจวัดคุณภาพสัญญาณไฟฟ้า ณ มทร.อีสาน ขอนแก่น
+          </div>
+        </div>
+
+        <!-- Panel 3: Field Notes (Logs & Case Studies) -->
+        <div class="dash-panel hud-reticle">
+          <div class="panel-header">
+            <div class="panel-title">FIELD NOTES</div>
+            <div class="panel-code">[LOGS_03]</div>
+          </div>
+          <div class="field-notes-list">
+            <div class="note-entry">
+              <div class="note-text">การทดสอบระบบควบคุมสายพานคัดแยกวัสดุด้วย PLC S7-1200 และ HMI หน้าจอทัชสกรีน</div>
+              <div class="note-meta">
+                <span>INDEX 03:12</span>
+                <span class="note-arrow" onclick="window.location.href='#courses'">&gt;</span>
+              </div>
+            </div>
+            <div class="note-entry">
+              <div class="note-text">การลงพื้นที่บริการวิชาชาชีพ ตรวจเช็กระบบไฟฟ้าและตู้ MDB ชุมชนชนบท ขอนแก่น</div>
+              <div class="note-meta">
+                <span>INDEX 02:48</span>
+                <span class="note-arrow" onclick="window.location.href='#activities'">&gt;</span>
+              </div>
+            </div>
+            <div class="note-entry">
+              <div class="note-text">การออกแบบบทเรียนสื่อผสมสำหรับการสอนวิชาเครื่องมือวัดทางไฟฟ้าสำหรับนักศึกษาช่าง</div>
+              <div class="note-meta">
+                <span>INDEX 01:15</span>
+                <span class="note-arrow" onclick="window.location.href='#courses'">&gt;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 4: System Overview (CAD / Blueprint Wireframe) -->
+        <div class="dash-panel hud-reticle">
+          <div class="panel-header">
+            <div class="panel-title">SYSTEM OVERVIEW</div>
+            <div class="panel-code">[CAD_04]</div>
+          </div>
+          <div class="cad-blueprint-frame">
+            <canvas id="cadBlueprintCanvas" class="blueprint-canvas"></canvas>
+          </div>
+          <div class="cad-badge">
+            <span>SLD: 400V/230V 50Hz</span>
+            <span>DWG: SCHEMATIC_REV2</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hazard Caution Stripe Divider -->
+    <div class="hazard-stripes"></div>
+    <!-- ====================================================================
+         2. ข้อมูลส่วนตัว (Personal Information & Specification Sheet)
+         ==================================================================== -->
+    <section id="profile" class="tactical-section">
+      <div class="tactical-container">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">// SECTION 02 — DOSSIER & SPECIFICATIONS</div>
+            <h2 class="section-title">ข้อมูลส่วนตัวและคุณลักษณะ</h2>
+          </div>
+          <div class="section-counter">02 / 06</div>
+        </div>
+
+        <div class="profile-dossier-grid">
+          <!-- Left: Tactical Spec Card -->
+          <div class="profile-card hud-reticle">
+            <div class="hud-reticle-tr"></div>
+            <div class="hud-reticle-bl"></div>
+
+            <div class="profile-avatar-box">
+              <img src="" alt="นายธนภัทร อินทร์ชูวงศ์" id="profileCardAvatar" class="profile-avatar-img">
+              <div class="portrait-placeholder" id="profileCardPlaceholder">
+                <i class="fa-solid fa-user-astronaut"></i>
+                <span style="font-size: 0.75rem;">NO IMAGE LOADED</span>
+              </div>
+              <label for="avatarUploadInput" class="avatar-upload-trigger">
+                <i class="fa-solid fa-camera"></i> เปลี่ยนรูปโปรไฟล์
+              </label>
+              <input type="file" id="avatarUploadInput" accept="image/*" style="display: none;">
+            </div>
+
+            <h3 class="profile-name" data-cms-key="profile.fullName">นายธนภัทร อินทร์ชูวงศ์</h3>
+            <div class="profile-nick">
+              ชื่อเล่น: <strong data-cms-key="profile.nickname">โอ</strong> | <span data-cms-key="profile.fullNameEn">Thanaphat Inchuwong</span>
+            </div>
+
+            <div class="profile-spec-table">
+              <div class="spec-row">
+                <span class="label">รหัสนักศึกษา:</span>
+                <span class="val" data-cms-key="profile.studentId">68322110081-8</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">สถาบัน:</span>
+                <span class="val" data-cms-key="profile.campusShort">มทร.อีสาน ขอนแก่น</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">คณะ:</span>
+                <span class="val" data-cms-key="profile.faculty">ครุศาสตร์อุตสาหกรรม</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">สาขาวิชา:</span>
+                <span class="val" data-cms-key="profile.department">ครุศาสตร์อุตสาหกรรมไฟฟ้า</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">วุฒิการศึกษา:</span>
+                <span class="val" data-cms-key="profile.degree">ค.อ.บ. ไฟฟ้า</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">วันเกิด:</span>
+                <span class="val" data-cms-key="profile.birthDate">10 พฤษภาคม 2547</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">อายุ:</span>
+                <span class="val" id="profileAgeDisplay">22 ปี</span>
+              </div>
+              <div class="spec-row">
+                <span class="label">สัญชาติ / เชื้อชาติ:</span>
+                <span class="val"><span data-cms-key="profile.nationality">ไทย</span> / <span data-cms-key="profile.race">ไทย</span></span>
+              </div>
+              <div class="spec-row">
+                <span class="label">โทรศัพท์:</span>
+                <span class="val"><a href="tel:0648430351" style="color: inherit; text-decoration: none;" data-cms-key="profile.phone">0648430351</a></span>
+              </div>
+              <div class="spec-row">
+                <span class="label">อีเมล:</span>
+                <span class="val"><a href="mailto:thanapatinchuwong2547@gmail.com" style="color: inherit; text-decoration: none;" data-cms-key="profile.email">thanapatinchuwong2547@gmail.com</a></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Detailed Statement & Interactive Music Instrument -->
+          <div class="profile-content-pane">
+            <!-- Academic Statement -->
+            <div class="academic-bio-box hud-reticle">
+              <h4><i class="fa-solid fa-graduation-cap"></i> ปรัชญาและเป้าหมายในวิชาชีพครูช่าง</h4>
+              <p class="bio-statement" data-cms-key="profile.bioStatement">
+                นักศึกษาหลักสูตรครุศาสตร์อุตสาหกรรมบัณฑิต สาขาวิชาครุศาสตร์อุตสาหกรรมไฟฟ้า มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น มีความมุ่งมั่นในการเรียนรู้ทั้งด้านวิศวกรรมไฟฟ้าเชิงปฏิบัติการ ระบบควบคุมอัตโนมัติในโรงงาน และศาสตร์การถ่ายทอดองค์ความรู้เพื่อผลิตบุคลากรช่างเทคนิคที่มีคุณภาพสู่ภาคอุตสาหกรรม
+              </p>
+            </div>
+
+            <!-- Music Talent & Interactive Guitar/Bass Synthesizer -->
+            <div class="music-talent-box hud-reticle">
+              <div class="music-box-head">
+                <h4><i class="fa-solid fa-guitar"></i> ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส</h4>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber);">INTERACTIVE SOUNDBOARD</span>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.85rem;" data-cms-key="profile.specialSkills">
+                มีความหลงใหลในเสียงดนตรี สามารถเล่นเครื่องดนตรีประเภทกีต้าร์โปร่ง กีต้าร์ไฟฟ้า และเบสไฟฟ้า ใช้ทักษะทางดนตรีในการฝึกฝนสมาธิ ความคิดสร้างสรรค์ และเสริมสร้างกิจกรรมนันทนาการร่วมกับผู้อื่น
+              </p>
+
+              <!-- Interactive Synthesizer Fretboard Widget -->
+              <div class="fretboard-widget">
+                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
+                  [ คลิกปุ่มสายเพื่อทดสอบเสียงโน้ตเสียงเบส/กีต้าร์สังเคราะห์ Web Audio ]
+                </div>
+                <div class="string-selector-row">
+                  <button class="string-btn" onclick="window.app.playSynthNote(82.41, 'E2 (Bass)')">E (สาย 6)</button>
+                  <button class="string-btn" onclick="window.app.playSynthNote(110.00, 'A2')">A (สาย 5)</button>
+                  <button class="string-btn" onclick="window.app.playSynthNote(146.83, 'D3')">D (สาย 4)</button>
+                  <button class="string-btn" onclick="window.app.playSynthNote(196.00, 'G3')">G (สาย 3)</button>
+                  <button class="string-btn" onclick="window.app.playSynthNote(246.94, 'B3')">B (สาย 2)</button>
+                  <button class="string-btn" onclick="window.app.playSynthNote(329.63, 'E4 (Guitar)')">E (สาย 1)</button>
+                  <button class="string-btn" style="background: var(--accent-primary); color: #fff;" onclick="window.app.playChordRiff()">
+                    <i class="fa-solid fa-play"></i> RIFF DEMO
+                  </button>
+                </div>
+                <canvas id="oscilloscopeCanvas" class="audio-oscilloscope-canvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Engineering Skills Meter Grid -->
+            <div class="academic-bio-box hud-reticle">
+              <h4><i class="fa-solid fa-sliders"></i> ทักษะความเชี่ยวชาญทางวิศวกรรมไฟฟ้า & ควบคุม</h4>
+              <div id="skillsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hazard Caution Stripe Divider -->
+    <div class="hazard-stripes"></div>
+
+    <!-- ====================================================================
+         3. ประวัติการศึกษา (Education Timeline)
+         ==================================================================== -->
+    <section id="education" class="tactical-section">
+      <div class="tactical-container">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">// SECTION 03 — ACADEMIC MILESTONES</div>
+            <h2 class="section-title">ประวัติการศึกษา</h2>
+          </div>
+          <div class="section-counter">03 / 06</div>
+        </div>
+
+        <div class="timeline-track" id="educationTimelineTrack"></div>
+      </div>
+    </section>
+
+    <!-- Hazard Caution Stripe Divider -->
+    <div class="hazard-stripes"></div>
+
+    <!-- ====================================================================
+         4. รายวิชาและชิ้นงาน (Courses & Coursework Artifacts)
+         ==================================================================== -->
+    <section id="courses" class="tactical-section">
+      <div class="tactical-container">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">// SECTION 04 — CURRICULUM & ARTIFACTS</div>
+            <h2 class="section-title">รายวิชาและชิ้นงาน</h2>
+          </div>
+          <div class="section-counter">04 / 06</div>
+        </div>
+
+        <div class="category-filter-bar" id="courseFilterBar">
+          <button class="filter-btn active" onclick="window.app.filterCourses('all')">ทั้งหมด (ALL)</button>
+          <button class="filter-btn" onclick="window.app.filterCourses('automation')">ระบบควบคุมอัตโนมัติ (AUTOMATION)</button>
+          <button class="filter-btn" onclick="window.app.filterCourses('power')">วิศวกรรมไฟฟ้ากำลัง (POWER)</button>
+          <button class="filter-btn" onclick="window.app.filterCourses('pedagogy')">ครุศาสตร์อุตสาหกรรม (PEDAGOGY)</button>
+          <button class="filter-btn" onclick="window.app.filterCourses('circuit')">วงจรไฟฟ้า (CIRCUITS)</button>
+        </div>
+
+        <div class="courses-grid" id="coursesGrid"></div>
+      </div>
+    </section>
+
+    <!-- Hazard Caution Stripe Divider -->
+    <div class="hazard-stripes"></div>
+
+    <!-- ====================================================================
+         5. กิจกรรมและผลงาน (Activities & Achievements)
+         ==================================================================== -->
+    <section id="activities" class="tactical-section">
+      <div class="tactical-container">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">// SECTION 05 — EXPERIENCES & HONORS</div>
+            <h2 class="section-title">กิจกรรมและผลงาน</h2>
+          </div>
+          <div class="section-counter">05 / 06</div>
+        </div>
+
+        <div class="category-filter-bar" id="activityFilterBar">
+          <button class="filter-btn active" onclick="window.app.filterActivities('all')">ทั้งหมด (ALL)</button>
+          <button class="filter-btn" onclick="window.app.filterActivities('competition')">แข่งขันทักษะ (COMPETITIONS)</button>
+          <button class="filter-btn" onclick="window.app.filterActivities('training')">การฝึกอบรม (TRAININGS)</button>
+          <button class="filter-btn" onclick="window.app.filterActivities('community')">บริการวิชาชีพสู่สังคม (COMMUNITY)</button>
+          <button class="filter-btn" onclick="window.app.filterActivities('music')">ดนตรีและกิจกรรม (MUSIC)</button>
+        </div>
+
+        <div class="activities-grid" id="activitiesGrid"></div>
+      </div>
+    </section>
+
+    <!-- Hazard Caution Stripe Divider -->
+    <div class="hazard-stripes"></div>
+
+    <!-- ====================================================================
+         6. ส่วนท้ายของเว็บ (Official Footer & Attribution)
+         ==================================================================== -->
+    <footer id="contact" class="tactical-footer">
+      <div class="tactical-container">
+        <div class="footer-inner">
+          <div class="footer-top-row">
+            <div class="footer-attribution">
+              <div class="panel-title" style="margin-bottom: 0.5rem;">OFFICIAL PORTFOLIO ATTRIBUTION</div>
+              <div class="official-credit-box hud-reticle">
+                <div>จัดทำโดย: <strong>นาย ธนภัทร อินทร์ชูวงศ์</strong></div>
+                <div>รหัสนักศึกษา: <strong>68322110081-8</strong></div>
+                <div><strong>มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น</strong></div>
+                <div><strong>คณะครุศาสตร์อุตสาหกรรม สาขาครุศาสตร์อุตสาหกรรมไฟฟ้า</strong></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="panel-title" style="margin-bottom: 0.75rem;">DIRECT CONTACT CHANNELS</div>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.85rem;">
+                <div><i class="fa-solid fa-phone" style="color: var(--accent-primary); width: 22px;"></i> 0648430351</div>
+                <div><i class="fa-solid fa-envelope" style="color: var(--accent-primary); width: 22px;"></i> thanapatinchuwong2547@gmail.com</div>
+                <div><i class="fa-brands fa-github" style="color: var(--accent-primary); width: 22px;"></i> github.com/thanapatinchuwong2547-ops</div>
+                <div><i class="fa-solid fa-location-dot" style="color: var(--accent-primary); width: 22px;"></i> มทร.อีสาน ขอนแก่น (ไทย-เยอรมัน)</div>
+              </div>
+            </div>
+
+            <div class="footer-status-widget hud-reticle">
+              <div class="widget-row"><span>CLIP_ID:</span> <span>CLIP_0012</span></div>
+              <div class="widget-row"><span>TIMECODE:</span> <span id="footerClock">00:01:24:08</span></div>
+              <div class="widget-row"><span>FORMAT:</span> <span>1080 / 24P</span></div>
+              <div class="widget-row"><span>STANDARDS:</span> <span>IEC / EIT / TISI</span></div>
+              <div class="widget-row"><span>DATABASE:</span> <span id="footerDbStatus" style="color: var(--signal-online);">INDEXED_DB + CLOUD</span></div>
+            </div>
+          </div>
+
+          <div class="footer-bottom-bar">
+            <div>&copy; 2026 นายธนภัทร อินทร์ชูวงศ์. All rights reserved. Industrial Education & Electrical Engineering.</div>
+            <div style="display: flex; gap: 1rem;">
+              <span>SEC_ACCESS: PRESS <kbd style="background: var(--bg-panel); border: 1px solid var(--border-hairline); padding: 2px 6px;">CTRL + ALT + P</kbd> FOR ADMIN</span>
+              <a href="#overview" style="color: var(--accent-amber); text-decoration: none;">[ BACK TO TOP ▲ ]</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ====================================================================
+       7. Hidden Admin Authentication Modal (Ctrl + Alt + P)
+       Username: O’Coner | Password: thanapat4444
+       ==================================================================== -->
+  <div class="modal-backdrop" id="adminLoginModal">
+    <div class="admin-login-dialog hud-reticle">
+      <div class="hud-reticle-tr"></div>
+      <div class="hud-reticle-bl"></div>
+
+      <div class="dialog-header">
+        <div class="dialog-title"><i class="fa-solid fa-shield-halved"></i> SECURE TERMINAL LOGIN</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeLoginModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="adminLoginForm" onsubmit="event.preventDefault(); window.app.handleAdminLogin();">
+        <div class="form-group">
+          <label class="form-label" for="loginUsername">IDENTIFIER / USERNAME</label>
+          <input type="text" id="loginUsername" class="form-control" placeholder="ป้อนชื่อผู้ใช้ (O'Coner)" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">ACCESS KEY / PASSWORD</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="ป้อนรหัสผ่าน" required autocomplete="off">
+        </div>
+        <div id="loginErrorMsg" style="color: var(--signal-rec); font-family: var(--font-mono); font-size: 0.78rem; margin-bottom: 1rem; display: none;">
+          <i class="fa-solid fa-triangle-exclamation"></i> ข้อมูลเข้าสู่ระบบไม่ถูกต้อง โปรดลองอีกครั้ง
+        </div>
+        <button type="submit" class="btn-tactical btn-tactical-primary" style="width: 100%; justify-content: center;">
+          <i class="fa-solid fa-unlock-keyhole"></i> ยืนยันการเข้าสู่ระบบ
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       8. Admin Floating Control Deck & CMS Studio (Visible after login)
+       ==================================================================== -->
+  <div class="admin-dock" id="adminDock">
+    <div class="admin-dock-bar hud-reticle">
+      <div class="dock-badge">ADMIN ACTIVE</div>
+      <button class="btn-dock" id="inlineEditToggleBtn" onclick="window.app.toggleInlineEdit()">
+        <i class="fa-solid fa-pen-to-square"></i> <span id="inlineEditStatus">แก้ไขเนื้อหา (OFF)</span>
+      </button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('theme')">
+        <i class="fa-solid fa-palette"></i> ตกแต่งเว็บ
+      </button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('files')">
+        <i class="fa-solid fa-cloud-arrow-up"></i> จัดการไฟล์
+      </button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('items')">
+        <i class="fa-solid fa-plus"></i> เพิ่มรายวิชา/ผลงาน
+      </button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('supabase')">
+        <i class="fa-solid fa-database"></i> Supabase Cloud
+      </button>
+      <button class="btn-dock" onclick="window.app.exportDataJSON()" title="สำรองข้อมูลทั้งหมด">
+        <i class="fa-solid fa-download"></i> สำรอง JSON
+      </button>
+      <button class="btn-dock" onclick="window.app.handleLogout()" style="color: var(--signal-rec);">
+        <i class="fa-solid fa-power-off"></i> ออกจากระบบ
+      </button>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       9. CMS Studio Modal (Appearance, Files, Supabase, Add Items)
+       ==================================================================== -->
+  <div class="modal-backdrop" id="cmsStudioModal">
+    <div class="admin-login-dialog hud-reticle" style="max-width: 650px; width: 95%;">
+      <div class="hud-reticle-tr"></div>
+      <div class="hud-reticle-bl"></div>
+
+      <div class="dialog-header">
+        <div class="dialog-title" id="cmsModalTitle">CMS STUDIO</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeCMSModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="cmsModalBody" style="max-height: 70vh; overflow-y: auto; padding-right: 6px;"></div>
+    </div>
+  </div>
+
+  <!-- Media Player Lightbox Modal -->
+  <div class="modal-backdrop" id="mediaPlayerModal">
+    <div class="admin-login-dialog hud-reticle" style="max-width: 800px; width: 95%; padding: 1.5rem;">
+      <div class="dialog-header">
+        <div class="dialog-title"><i class="fa-solid fa-play"></i> MEDIA VIEWER</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeMediaModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="mediaModalContainer" style="width: 100%; aspect-ratio: 16/9; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;"></div>
+    </div>
+  </div>
+
+  <!-- Core Scripts -->
+  <script src="data.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
