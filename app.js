@@ -520,12 +520,47 @@ class PortfolioApp {
     this.playTacticalBeep(700, "sine", 0.04);
   }
 
+  checkAdminOrPrompt(actionName = "ดำเนินการ") {
+    if (sessionStorage.getItem(this.authKey) === "authenticated") {
+      return true;
+    }
+    this.openLoginModal();
+    alert(`ระบบความปลอดภัย: กรุณาเข้าสู่ระบบก่อนทำการ${actionName}\n(ชื่อผู้ใช้: O’Coner / รหัสผ่าน: thanapat4444)`);
+    return false;
+  }
+
+  promptAddCourse() {
+    if (!this.checkAdminOrPrompt("เพิ่มรายวิชาใหม่")) return;
+    this.openCMSModal("items");
+    setTimeout(() => this.switchItemTab("course"), 50);
+  }
+
+  promptAddActivity() {
+    if (!this.checkAdminOrPrompt("เพิ่มกิจกรรม/ผลงานใหม่")) return;
+    this.openCMSModal("items");
+    setTimeout(() => this.switchItemTab("activity"), 50);
+  }
+
   renderCourses(category = "all") {
     const container = document.getElementById("coursesGrid");
     if (!container) return;
     container.innerHTML = "";
 
     const list = this.data.courses.filter((c) => (category === "all" ? true : c.category === category));
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 3rem 1.5rem; text-align: center; background: var(--bg-panel); border: 1px dashed var(--border-hairline);">
+          <i class="fa-solid fa-book-open" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+          <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-secondary);">ยังไม่มีรายวิชาในหมวดหมู่นี้</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 16px 0;">คุณสามารถเพิ่มรายวิชาใหม่ได้โดยคลิกปุ่มด้านล่าง</p>
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.promptAddCourse()">
+            <i class="fa-solid fa-plus"></i> เพิ่มรายวิชาใหม่
+          </button>
+        </div>
+      `;
+      return;
+    }
 
     list.forEach((c) => {
       const card = document.createElement("div");
@@ -541,29 +576,207 @@ class PortfolioApp {
         <h3 class="course-title">${c.title}</h3>
         <p class="course-desc">${c.description}</p>
 
-        <div class="artifacts-header">
-          <i class="fa-solid fa-microchip"></i> ชิ้นงานและผลลัพธ์การเรียนรู้ (ARTIFACTS)
+        <div class="artifacts-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span><i class="fa-solid fa-microchip"></i> ชิ้นงานและผลลัพธ์การเรียนรู้ (ARTIFACTS)</span>
+          <button class="btn-dock" style="font-size: 0.68rem; padding: 1px 6px;" onclick="window.app.promptAddArtifact('${c.id}')" title="เพิ่มชิ้นงานในวิชานี้">
+            <i class="fa-solid fa-plus"></i> เพิ่มชิ้นงาน
+          </button>
         </div>
         <div class="artifacts-list">
-          ${(c.artifacts || [])
-            .map(
-              (art) => `
-            <div class="artifact-item">
-              <div>
-                <div class="artifact-name"><i class="fa-solid fa-file-lines" style="color: var(--accent-amber); margin-right: 6px;"></i>${art.name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">${art.summary || ""}</div>
+          ${(c.artifacts && c.artifacts.length > 0)
+            ? c.artifacts.map((art, artIdx) => `
+              <div class="artifact-item">
+                <div style="flex-grow: 1; padding-right: 8px;">
+                  <div class="artifact-name"><i class="fa-solid fa-file-lines" style="color: var(--accent-amber); margin-right: 6px;"></i>${art.name}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">${art.summary || ""}</div>
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                  <button class="btn-dock" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.app.previewArtifact('${art.name}', '${art.fileUrl || ""}')">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิด
+                  </button>
+                  <button class="btn-dock" style="padding: 2px 6px; font-size: 0.7rem; color: var(--signal-rec);" onclick="window.app.deleteArtifact('${c.id}', ${artIdx})" title="ลบชิ้นงานนี้">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
               </div>
-              <button class="btn-dock" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.app.previewArtifact('${art.name}', '${art.fileUrl || ""}')">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิด
-              </button>
-            </div>
-          `
-            )
-            .join("")}
+            `).join("")
+            : `<div style="font-size: 0.78rem; color: var(--text-muted); padding: 6px 0;">ยังไม่มีชิ้นงานแนบในวิชานี้</div>`
+          }
+        </div>
+
+        <div class="card-mgmt-actions" style="margin-top: auto; padding-top: 1rem; border-top: 1px dashed var(--border-hairline); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <button class="btn-dock" style="font-size: 0.72rem; padding: 4px 10px;" onclick="window.app.editCourse('${c.id}')">
+            <i class="fa-solid fa-pen"></i> แก้ไขวิชา
+          </button>
+          <button class="btn-dock" style="font-size: 0.72rem; padding: 4px 10px; color: var(--signal-rec);" onclick="window.app.deleteCourse('${c.id}')">
+            <i class="fa-solid fa-trash-can"></i> ลบวิชานี้
+          </button>
         </div>
       `;
       container.appendChild(card);
     });
+  }
+
+  deleteCourse(id) {
+    if (!this.checkAdminOrPrompt("ลบรายวิชา")) return;
+    const c = this.data.courses.find((item) => item.id === id);
+    const title = c ? `${c.code} ${c.title}` : "รายวิชานี้";
+    if (confirm(`ยืนยันการลบรายวิชา:\n"${title}"\nออกจากระบบหรือไม่?`)) {
+      this.data.courses = this.data.courses.filter((item) => item.id !== id);
+      this.saveData();
+      this.renderCourses(this.currentCourseFilter || "all");
+      this.playTacticalBeep(320, "sawtooth", 0.12);
+      alert(`ลบรายวิชา "${title}" เรียบร้อยแล้ว`);
+    }
+  }
+
+  editCourse(id) {
+    if (!this.checkAdminOrPrompt("แก้ไขรายวิชา")) return;
+    const c = this.data.courses.find((item) => item.id === id);
+    if (!c) return;
+
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูลรายวิชา: ${c.code}`;
+    body.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">รหัสวิชา (COURSE CODE)</label>
+          <input type="text" id="editCourseCode" class="form-control" value="${c.code || ""}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ชื่อวิชา (COURSE TITLE)</label>
+          <input type="text" id="editCourseTitle" class="form-control" value="${c.title || ""}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมวดหมู่วิชา</label>
+          <select id="editCourseCat" class="form-control">
+            <option value="automation" ${c.category === "automation" ? "selected" : ""}>ระบบควบคุมอัตโนมัติ (Automation)</option>
+            <option value="power" ${c.category === "power" ? "selected" : ""}>วิศวกรรมไฟฟ้ากำลัง (Power)</option>
+            <option value="pedagogy" ${c.category === "pedagogy" ? "selected" : ""}>ครุศาสตร์อุตสาหกรรม (Pedagogy)</option>
+            <option value="circuit" ${c.category === "circuit" ? "selected" : ""}>วงจรไฟฟ้า (Circuits)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หน่วยกิต (CREDITS)</label>
+          <input type="text" id="editCourseCredits" class="form-control" value="${c.credits || "3 (2-2-5)"}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">คำอธิบายรายวิชา</label>
+          <textarea id="editCourseDesc" class="form-control" rows="3">${c.description || ""}</textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitEditCourse('${c.id}')">
+            <i class="fa-solid fa-check"></i> บันทึกการแก้ไข
+          </button>
+          <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    `;
+    modal.classList.add("open");
+  }
+
+  submitEditCourse(id) {
+    const c = this.data.courses.find((item) => item.id === id);
+    if (!c) return;
+
+    c.code = document.getElementById("editCourseCode").value.trim();
+    c.title = document.getElementById("editCourseTitle").value.trim();
+    c.category = document.getElementById("editCourseCat").value;
+    c.credits = document.getElementById("editCourseCredits").value.trim();
+    c.description = document.getElementById("editCourseDesc").value.trim();
+
+    this.saveData();
+    this.renderCourses(this.currentCourseFilter || "all");
+    this.closeCMSModal();
+    this.playTacticalBeep(900, "triangle", 0.08);
+    alert("บันทึกการแก้ไขรายวิชาเรียบร้อยแล้ว!");
+  }
+
+  promptAddArtifact(courseId) {
+    if (!this.checkAdminOrPrompt("เพิ่มชิ้นงานในรายวิชา")) return;
+    const c = this.data.courses.find((item) => item.id === courseId);
+    if (!c) return;
+
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    title.innerHTML = `<i class="fa-solid fa-file-circle-plus"></i> เพิ่มชิ้นงานในวิชา: ${c.code}`;
+    body.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">ชื่อชิ้นงาน (ARTIFACT NAME)</label>
+          <input type="text" id="newArtName" class="form-control" placeholder="เช่น แผนการจัดการเรียนรู้เรื่อง วงจรควบคุมมอเตอร์" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">คำอธิบายสรุปชิ้นงาน</label>
+          <textarea id="newArtSummary" class="form-control" rows="2" placeholder="เช่น รายละเอียดแบบแปลน เอกสาร หรือโครงงาน"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL เอกสาร/ไฟล์ชิ้นงาน (ปล่อยว่างหรือระบุลิงก์ไฟล์)</label>
+          <input type="text" id="newArtUrl" class="form-control" placeholder="https://... หรือปล่อยว่าง">
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitNewArtifact('${c.id}')">
+            <i class="fa-solid fa-check"></i> บันทึกชิ้นงาน
+          </button>
+          <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    `;
+    modal.classList.add("open");
+  }
+
+  submitNewArtifact(courseId) {
+    const c = this.data.courses.find((item) => item.id === courseId);
+    if (!c) return;
+
+    const name = document.getElementById("newArtName").value.trim();
+    const summary = document.getElementById("newArtSummary").value.trim();
+    const url = document.getElementById("newArtUrl").value.trim();
+
+    if (!name) {
+      alert("โปรดระบุชื่อชิ้นงาน");
+      return;
+    }
+
+    if (!c.artifacts) c.artifacts = [];
+    c.artifacts.push({
+      name: name,
+      summary: summary || "",
+      fileUrl: url || "",
+      type: "project"
+    });
+
+    this.saveData();
+    this.renderCourses(this.currentCourseFilter || "all");
+    this.closeCMSModal();
+    this.playTacticalBeep(900, "triangle", 0.08);
+    alert(`เพิ่มชิ้นงานในวิชา ${c.code} สำเร็จแล้ว!`);
+  }
+
+  deleteArtifact(courseId, artifactIdx) {
+    if (!this.checkAdminOrPrompt("ลบชิ้นงาน")) return;
+    const c = this.data.courses.find((item) => item.id === courseId);
+    if (!c || !c.artifacts || !c.artifacts[artifactIdx]) return;
+
+    const artName = c.artifacts[artifactIdx].name;
+    if (confirm(`ยืนยันการลบชิ้นงาน:\n"${artName}"\nออกจากวิชา ${c.code} หรือไม่?`)) {
+      c.artifacts.splice(artifactIdx, 1);
+      this.saveData();
+      this.renderCourses(this.currentCourseFilter || "all");
+      this.playTacticalBeep(320, "sawtooth", 0.1);
+      alert(`ลบชิ้นงาน "${artName}" เรียบร้อยแล้ว`);
+    }
   }
 
   filterActivities(cat) {
@@ -581,6 +794,20 @@ class PortfolioApp {
 
     const list = this.data.activities.filter((a) => (category === "all" ? true : a.category === category));
 
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 3rem 1.5rem; text-align: center; background: var(--bg-panel); border: 1px dashed var(--border-hairline);">
+          <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+          <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-secondary);">ยังไม่มีกิจกรรมหรือผลงานในหมวดหมู่นี้</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 16px 0;">คุณสามารถเพิ่มกิจกรรม/ผลงานใหม่ได้โดยคลิกปุ่มด้านล่าง</p>
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.promptAddActivity()">
+            <i class="fa-solid fa-plus"></i> เพิ่มกิจกรรม/ผลงานใหม่
+          </button>
+        </div>
+      `;
+      return;
+    }
+
     list.forEach((act) => {
       const card = document.createElement("div");
       card.className = "activity-card hud-reticle";
@@ -595,10 +822,104 @@ class PortfolioApp {
           <div class="activity-date"><i class="fa-regular fa-calendar"></i> ${act.date} • ${act.place || ""}</div>
           <h3 class="activity-title">${act.title}</h3>
           <p class="activity-summary">${act.summary}</p>
+          <div class="card-mgmt-actions" style="margin-top: auto; padding-top: 1rem; border-top: 1px dashed var(--border-hairline); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <button class="btn-dock" style="font-size: 0.72rem; padding: 4px 10px;" onclick="window.app.editActivity('${act.id}')">
+              <i class="fa-solid fa-pen"></i> แก้ไขผลงาน
+            </button>
+            <button class="btn-dock" style="font-size: 0.72rem; padding: 4px 10px; color: var(--signal-rec);" onclick="window.app.deleteActivity('${act.id}')">
+              <i class="fa-solid fa-trash-can"></i> ลบผลงานนี้
+            </button>
+          </div>
         </div>
       `;
       container.appendChild(card);
     });
+  }
+
+  deleteActivity(id) {
+    if (!this.checkAdminOrPrompt("ลบผลงาน")) return;
+    const a = this.data.activities.find((item) => item.id === id);
+    const title = a ? a.title : "ผลงานนี้";
+    if (confirm(`ยืนยันการลบกิจกรรม/ผลงาน:\n"${title}"\nออกจากระบบหรือไม่?`)) {
+      this.data.activities = this.data.activities.filter((item) => item.id !== id);
+      this.saveData();
+      this.renderActivities(this.currentActivityFilter || "all");
+      this.playTacticalBeep(320, "sawtooth", 0.12);
+      alert(`ลบผลงาน "${title}" เรียบร้อยแล้ว`);
+    }
+  }
+
+  editActivity(id) {
+    if (!this.checkAdminOrPrompt("แก้ไขผลงาน")) return;
+    const act = this.data.activities.find((item) => item.id === id);
+    if (!act) return;
+
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไขกิจกรรม/ผลงาน`;
+    body.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">ชื่อกิจกรรมหรือผลงาน</label>
+          <input type="text" id="editActTitle" class="form-control" value="${act.title || ""}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมวดหมู่</label>
+          <select id="editActCat" class="form-control">
+            <option value="competition" ${act.category === "competition" ? "selected" : ""}>แข่งขันทักษะวิชาชีพ</option>
+            <option value="training" ${act.category === "training" ? "selected" : ""}>การฝึกอบรมเชิงปฏิบัติการ</option>
+            <option value="community" ${act.category === "community" ? "selected" : ""}>บริการวิชาชีพสู่สังคม</option>
+            <option value="music" ${act.category === "music" ? "selected" : ""}>ดนตรีและศิลปวัฒนธรรม</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ป้ายสถานะ (BADGE)</label>
+          <input type="text" id="editActBadge" class="form-control" value="${act.badge || "ACHIEVEMENT"}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ช่วงเวลาและสถานที่</label>
+          <input type="text" id="editActDate" class="form-control" value="${act.date || ""}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL รูปภาพผลงาน (หรือปล่อยว่างเพื่อใช้รูปมาตรฐาน)</label>
+          <input type="text" id="editActImg" class="form-control" value="${act.imageUrl || ""}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">คำอธิบายรายละเอียด</label>
+          <textarea id="editActSummary" class="form-control" rows="3">${act.summary || ""}</textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitEditActivity('${act.id}')">
+            <i class="fa-solid fa-check"></i> บันทึกการแก้ไข
+          </button>
+          <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    `;
+    modal.classList.add("open");
+  }
+
+  submitEditActivity(id) {
+    const act = this.data.activities.find((item) => item.id === id);
+    if (!act) return;
+
+    act.title = document.getElementById("editActTitle").value.trim();
+    act.category = document.getElementById("editActCat").value;
+    act.badge = document.getElementById("editActBadge").value.trim() || "ACHIEVEMENT";
+    act.date = document.getElementById("editActDate").value.trim();
+    act.imageUrl = document.getElementById("editActImg").value.trim();
+    act.summary = document.getElementById("editActSummary").value.trim();
+
+    this.saveData();
+    this.renderActivities(this.currentActivityFilter || "all");
+    this.closeCMSModal();
+    this.playTacticalBeep(900, "triangle", 0.08);
+    alert("บันทึกการแก้ไขกิจกรรมเรียบร้อยแล้ว!");
   }
   setupEventListeners() {
     const themeBtn = document.getElementById("themeToggleBtn");
