@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="th" data-theme="dark" data-palette="coffee">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กิจกรรมและผลงาน | นายธนภัทร อินทร์ชูวงศ์ (โอ) ครุศาสตร์อุตสาหกรรมไฟฟ้า มทร.อีสาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-coffee">
+
+  <header class="tactical-header">
+    <div class="tactical-container">
+      <div class="header-inner">
+        <a href="index.html" class="brand-dossier">
+          <div class="brand-badge">EE-EDU</div>
+          <div class="brand-title">
+            <span class="brand-name">THANAPHAT I.</span>
+            <span class="brand-sub">ID // 68322110081-8</span>
+          </div>
+        </a>
+
+        <nav class="tactical-nav">
+          <a href="index.html" class="nav-link">OVERVIEW (หน้าหลัก)</a>
+          <a href="profile.html" class="nav-link">BIO / ข้อมูลส่วนตัว</a>
+          <a href="education.html" class="nav-link">EDUCATION / การศึกษา</a>
+          <a href="courses.html" class="nav-link">COURSES / รายวิชา</a>
+          <a href="activities.html" class="nav-link active">ACHIEVEMENTS / ผลงาน</a>
+          <a href="index.html#contact" class="nav-link">CONTACT / ติดต่อ</a>
+        </nav>
+
+        <div class="header-actions">
+          <button id="themeToggleBtn" class="btn-icon" title="สลับโหมด มืด / สว่าง"><i class="fa-solid fa-circle-half-stroke"></i></button>
+          <button id="soundToggleBtn" class="btn-icon" title="เปิด/ปิด เสียงเอฟเฟกต์"><i class="fa-solid fa-volume-high"></i></button>
+          <button id="adminKeyholeBtn" class="btn-secret-login" title="ระบบจัดการหลังบ้าน (Ctrl + Alt + P)"><i class="fa-solid fa-lock"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="hazard-stripes-light"></div>
+  </header>
+
+  <main>
+    <section class="subpage-banner">
+      <div class="tactical-container">
+        <div class="subpage-breadcrumb">
+          <a href="index.html"><i class="fa-solid fa-house"></i> หน้าหลัก (ALL-IN-ONE)</a>
+          <span>/</span>
+          <span style="color: var(--accent-primary);">SECTION 05: กิจกรรมและผลงาน</span>
+        </div>
+        <div class="subpage-title-row">
+          <div>
+            <div class="section-eyebrow">// INDEPENDENT MODULE // EXPERIENCES & HONORS</div>
+            <h1 class="subpage-title">กิจกรรมและผลงาน (ACTIVITIES & ACHIEVEMENTS)</h1>
+            <p class="subpage-desc">
+              ประวัติการเข้าร่วมแข่งขันทักษะวิชาชีพ การอบรมเชิงปฏิบัติการ งานบริการวิชาชีพสู่ชุมชน และกิจกรรมดนตรีสากลในสถาบัน
+            </p>
+          </div>
+          <a href="index.html" class="btn-back-home">
+            <i class="fa-solid fa-arrow-left"></i> กลับสู่หน้าหลัก
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activities Section Container -->
+    <section class="tactical-container" style="padding-bottom: 4rem;">
+      <div class="category-filter-bar" id="activityFilterBar">
+        <button class="filter-btn active" onclick="window.app.filterActivities('all')">ทั้งหมด (ALL)</button>
+        <button class="filter-btn" onclick="window.app.filterActivities('competition')">แข่งขันทักษะ (COMPETITIONS)</button>
+        <button class="filter-btn" onclick="window.app.filterActivities('training')">การฝึกอบรม (TRAININGS)</button>
+        <button class="filter-btn" onclick="window.app.filterActivities('community')">บริการวิชาชีพสู่สังคม (COMMUNITY)</button>
+        <button class="filter-btn" onclick="window.app.filterActivities('music')">ดนตรีและกิจกรรม (MUSIC)</button>
+      </div>
+
+      <div class="activities-grid" id="activitiesGrid"></div>
+    </section>
+
+    <div class="hazard-stripes"></div>
+
+    <footer class="tactical-footer">
+      <div class="tactical-container">
+        <div class="footer-inner">
+          <div class="official-credit-box hud-reticle">
+            <div>จัดทำโดย: <strong>นาย ธนภัทร อินทร์ชูวงศ์</strong> | รหัสนักศึกษา: <strong>68322110081-8</strong></div>
+            <div><strong>มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น | คณะครุศาสตร์อุตสาหกรรม สาขาครุศาสตร์อุตสาหกรรมไฟฟ้า</strong></div>
+          </div>
+          <div class="footer-bottom-bar" style="margin-top: 1.5rem;">
+            <div>&copy; 2026 นายธนภัทร อินทร์ชูวงศ์. All rights reserved.</div>
+            <a href="index.html" style="color: var(--accent-amber); text-decoration: none;">[ ← กลับหน้าหลัก ]</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Login Modal & CMS Dock -->
+  <div class="modal-backdrop" id="adminLoginModal">
+    <div class="admin-login-dialog hud-reticle">
+      <div class="dialog-header">
+        <div class="dialog-title"><i class="fa-solid fa-shield-halved"></i> SECURE TERMINAL LOGIN</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); window.app.handleAdminLogin();">
+        <div class="form-group">
+          <label class="form-label" for="loginUsername">IDENTIFIER / USERNAME</label>
+          <input type="text" id="loginUsername" class="form-control" placeholder="ป้อนชื่อผู้ใช้ (O'Coner)" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">ACCESS KEY / PASSWORD</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="ป้อนรหัสผ่าน" required autocomplete="off">
+        </div>
+        <div id="loginErrorMsg" style="color: var(--signal-rec); font-family: var(--font-mono); font-size: 0.78rem; margin-bottom: 1rem; display: none;">
+          <i class="fa-solid fa-triangle-exclamation"></i> ข้อมูลเข้าสู่ระบบไม่ถูกต้อง
+        </div>
+        <button type="submit" class="btn-tactical btn-tactical-primary" style="width: 100%; justify-content: center;">เข้าสู่ระบบ</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-dock" id="adminDock">
+    <div class="admin-dock-bar hud-reticle">
+      <div class="dock-badge">ADMIN ACTIVE</div>
+      <button class="btn-dock" id="inlineEditToggleBtn" onclick="window.app.toggleInlineEdit()"><i class="fa-solid fa-pen-to-square"></i> <span id="inlineEditStatus">แก้ไขเนื้อหา (OFF)</span></button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('theme')"><i class="fa-solid fa-palette"></i> ตกแต่งเว็บ</button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('files')"><i class="fa-solid fa-cloud-arrow-up"></i> จัดการไฟล์</button>
+      <button class="btn-dock" onclick="window.app.openCMSModal('items')"><i class="fa-solid fa-plus"></i> เพิ่มรายวิชา/ผลงาน</button>
+      <button class="btn-dock" onclick="window.app.exportDataJSON()"><i class="fa-solid fa-download"></i> สำรอง JSON</button>
+      <button class="btn-dock" onclick="window.app.handleLogout()" style="color: var(--signal-rec);"><i class="fa-solid fa-power-off"></i> ออก</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cmsStudioModal">
+    <div class="admin-login-dialog hud-reticle" style="max-width: 650px; width: 95%;">
+      <div class="dialog-header">
+        <div class="dialog-title" id="cmsModalTitle">CMS STUDIO</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeCMSModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="cmsModalBody" style="max-height: 70vh; overflow-y: auto; padding-right: 6px;"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="mediaPlayerModal">
+    <div class="admin-login-dialog hud-reticle" style="max-width: 800px; width: 95%; padding: 1.5rem;">
+      <div class="dialog-header">
+        <div class="dialog-title"><i class="fa-solid fa-play"></i> MEDIA VIEWER</div>
+        <button type="button" class="btn-icon" style="width: 28px; height: 28px;" onclick="window.app.closeMediaModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="mediaModalContainer" style="width: 100%; aspect-ratio: 16/9; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

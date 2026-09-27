@@ -24,7 +24,7 @@ const DEFAULT_PORTFOLIO_DATA = {
     race: "ไทย",
     religion: "พุทธ",
     specialSkills: "เล่นดนตรี (กีต้าร์, เบส), ออกแบบระบบควบคุมไฟฟ้าอุตสาหกรรม, การเขียนโปรแกรม PLC",
-    avatarUrl: "",
+    avatarUrl: "assets/profile.jpg",
     heroTitle: "ENGINEERING POWER. EDUCATING MINDS.",
     heroSubtitle: "มุ่งมั่นพัฒนาวิชาชีพครูช่างอุตสาหกรรม ผสานศาสตร์วิศวกรรมไฟฟ้าสมัยใหม่และนวัตกรรมการจัดการเรียนรู้เชิงปฏิบัติการ",
     bioStatement: "นักศึกษาหลักสูตรครุศาสตร์อุตสาหกรรมบัณฑิต สาขาวิชาครุศาสตร์อุตสาหกรรมไฟฟ้า มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น มีความมุ่งมั่นในการเรียนรู้ทั้งด้านวิศวกรรมไฟฟ้าเชิงปฏิบัติการ ระบบควบคุมอัตโนมัติในโรงงาน และศาสตร์การถ่ายทอดองค์ความรู้เพื่อผลิตบุคลากรช่างเทคนิคที่มีคุณภาพสู่ภาคอุตสาหกรรม",
@@ -272,8 +272,9 @@ const DEFAULT_PORTFOLIO_DATA = {
 
   siteSettings: {
     theme: "dark", // "dark" | "light"
-    accentColor: "#E05A2B", // Default: Warm Brick Red
-    accentName: "Brick Terracotta",
+    palette: "coffee", // "coffee" | "brick" | "amber" | "tangerine"
+    accentColor: "#C68642", // Warm Roasted Coffee / Crema Gold
+    accentName: "Espresso Roast Coffee",
     soundEnabled: true,
     scanlinesEnabled: false,
     hudBracketsEnabled: true,

@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="th" data-theme="dark">
+<html lang="th" data-theme="dark" data-palette="coffee">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,14 +20,14 @@
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="theme-warm-terracotta">
+<body class="theme-coffee">
 
   <!-- Tactical Top Bar & Navigation -->
   <header class="tactical-header">
     <div class="tactical-container">
       <div class="header-inner">
         <!-- Brand & Student ID Spec -->
-        <a href="#overview" class="brand-dossier">
+        <a href="index.html" class="brand-dossier">
           <div class="brand-badge">EE-EDU</div>
           <div class="brand-title">
             <span class="brand-name">THANAPHAT I.</span>
@@ -37,11 +37,11 @@
 
         <!-- Desktop HUD Navigation Links -->
         <nav class="tactical-nav">
-          <a href="#overview" class="nav-link active">OVERVIEW</a>
-          <a href="#profile" class="nav-link">BIO / ประวัติ</a>
-          <a href="#education" class="nav-link">EDUCATION / การศึกษา</a>
-          <a href="#courses" class="nav-link">COURSES / รายวิชา</a>
-          <a href="#activities" class="nav-link">ACHIEVEMENTS / ผลงาน</a>
+          <a href="index.html" class="nav-link active">OVERVIEW (หน้าหลักรวม)</a>
+          <a href="profile.html" class="nav-link">BIO / ข้อมูลส่วนตัว</a>
+          <a href="education.html" class="nav-link">EDUCATION / การศึกษา</a>
+          <a href="courses.html" class="nav-link">COURSES / รายวิชา</a>
+          <a href="activities.html" class="nav-link">ACHIEVEMENTS / ผลงาน</a>
           <a href="#contact" class="nav-link">CONTACT / ติดต่อ</a>
         </nav>
 
@@ -110,11 +110,11 @@
                 แฟ้มสะสมผลงานทางวิชาการและทักษะปฏิบัติการวิศวกรรมไฟฟ้า โดย <strong>นายธนภัทร อินทร์ชูวงศ์ (โอ)</strong> มุ่งเน้นการบูรณาการระบบควบคุมอัตโนมัติในงานอุตสาหกรรม การจัดการเรียนรู้วิชาชีพช่าง และความปลอดภัยตามมาตรฐานสากล
               </p>
               <div class="hero-actions">
-                <a href="#courses" class="btn-tactical btn-tactical-primary">
+                <a href="courses.html" class="btn-tactical btn-tactical-primary">
                   <span>สำรวจผลงานและโครงงาน</span>
                   <i class="fa-solid fa-chevron-right"></i>
                 </a>
-                <a href="#profile" class="btn-tactical btn-tactical-ghost">
+                <a href="profile.html" class="btn-tactical btn-tactical-ghost">
                   <i class="fa-solid fa-id-card"></i>
                   <span>ข้อมูลประวัติส่วนตัว</span>
                 </a>
@@ -133,14 +133,11 @@
                   <span>STATUS: ACTIVE</span>
                 </div>
                 <div class="portrait-frame" id="heroPortraitContainer">
-                  <img src="" alt="นายธนภัทร อินทร์ชูวงศ์" id="heroPortraitImg" class="portrait-img">
-                  <div class="portrait-placeholder" id="heroPortraitPlaceholder">
+                  <img src="assets/profile.jpg" alt="นายธนภัทร อินทร์ชูวงศ์" id="heroPortraitImg" class="portrait-img active" style="display: block;">
+                  <div class="portrait-placeholder" id="heroPortraitPlaceholder" style="display: none;">
                     <i class="fa-solid fa-user-graduate"></i>
                     <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-primary); font-weight: 600;">
                       นายธนภัทร อินทร์ชูวงศ์ (โอ)
-                    </div>
-                    <div style="font-size: 0.72rem; color: var(--text-muted);">
-                      ครุศาสตร์อุตสาหกรรมไฟฟ้า มทร.อีสาน ขอนแก่น
                     </div>
                   </div>
                   <div class="portrait-spec-overlay">
@@ -240,21 +237,21 @@
               <div class="note-text">การทดสอบระบบควบคุมสายพานคัดแยกวัสดุด้วย PLC S7-1200 และ HMI หน้าจอทัชสกรีน</div>
               <div class="note-meta">
                 <span>INDEX 03:12</span>
-                <span class="note-arrow" onclick="window.location.href='#courses'">&gt;</span>
+                <a href="courses.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
               </div>
             </div>
             <div class="note-entry">
               <div class="note-text">การลงพื้นที่บริการวิชาชาชีพ ตรวจเช็กระบบไฟฟ้าและตู้ MDB ชุมชนชนบท ขอนแก่น</div>
               <div class="note-meta">
                 <span>INDEX 02:48</span>
-                <span class="note-arrow" onclick="window.location.href='#activities'">&gt;</span>
+                <a href="activities.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
               </div>
             </div>
             <div class="note-entry">
               <div class="note-text">การออกแบบบทเรียนสื่อผสมสำหรับการสอนวิชาเครื่องมือวัดทางไฟฟ้าสำหรับนักศึกษาช่าง</div>
               <div class="note-meta">
                 <span>INDEX 01:15</span>
-                <span class="note-arrow" onclick="window.location.href='#courses'">&gt;</span>
+                <a href="courses.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
               </div>
             </div>
           </div>
@@ -289,7 +286,12 @@
             <div class="section-eyebrow">// SECTION 02 — DOSSIER & SPECIFICATIONS</div>
             <h2 class="section-title">ข้อมูลส่วนตัวและคุณลักษณะ</h2>
           </div>
-          <div class="section-counter">02 / 06</div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <a href="profile.html" class="btn-dock" style="text-decoration: none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดดูหน้าเดี่ยว (Dedicated Page)
+            </a>
+            <div class="section-counter">02 / 06</div>
+          </div>
         </div>
 
         <div class="profile-dossier-grid">
@@ -299,10 +301,9 @@
             <div class="hud-reticle-bl"></div>
 
             <div class="profile-avatar-box">
-              <img src="" alt="นายธนภัทร อินทร์ชูวงศ์" id="profileCardAvatar" class="profile-avatar-img">
-              <div class="portrait-placeholder" id="profileCardPlaceholder">
+              <img src="assets/profile.jpg" alt="นายธนภัทร อินทร์ชูวงศ์" id="profileCardAvatar" class="profile-avatar-img" style="display: block;">
+              <div class="portrait-placeholder" id="profileCardPlaceholder" style="display: none;">
                 <i class="fa-solid fa-user-astronaut"></i>
-                <span style="font-size: 0.75rem;">NO IMAGE LOADED</span>
               </div>
               <label for="avatarUploadInput" class="avatar-upload-trigger">
                 <i class="fa-solid fa-camera"></i> เปลี่ยนรูปโปรไฟล์
@@ -361,7 +362,6 @@
 
           <!-- Right: Detailed Statement & Interactive Music Instrument -->
           <div class="profile-content-pane">
-            <!-- Academic Statement -->
             <div class="academic-bio-box hud-reticle">
               <h4><i class="fa-solid fa-graduation-cap"></i> ปรัชญาและเป้าหมายในวิชาชีพครูช่าง</h4>
               <p class="bio-statement" data-cms-key="profile.bioStatement">
@@ -369,7 +369,6 @@
               </p>
             </div>
 
-            <!-- Music Talent & Interactive Guitar/Bass Synthesizer -->
             <div class="music-talent-box hud-reticle">
               <div class="music-box-head">
                 <h4><i class="fa-solid fa-guitar"></i> ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส</h4>
@@ -379,7 +378,6 @@
                 มีความหลงใหลในเสียงดนตรี สามารถเล่นเครื่องดนตรีประเภทกีต้าร์โปร่ง กีต้าร์ไฟฟ้า และเบสไฟฟ้า ใช้ทักษะทางดนตรีในการฝึกฝนสมาธิ ความคิดสร้างสรรค์ และเสริมสร้างกิจกรรมนันทนาการร่วมกับผู้อื่น
               </p>
 
-              <!-- Interactive Synthesizer Fretboard Widget -->
               <div class="fretboard-widget">
                 <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
                   [ คลิกปุ่มสายเพื่อทดสอบเสียงโน้ตเสียงเบส/กีต้าร์สังเคราะห์ Web Audio ]
@@ -399,7 +397,6 @@
               </div>
             </div>
 
-            <!-- Engineering Skills Meter Grid -->
             <div class="academic-bio-box hud-reticle">
               <h4><i class="fa-solid fa-sliders"></i> ทักษะความเชี่ยวชาญทางวิศวกรรมไฟฟ้า & ควบคุม</h4>
               <div id="skillsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
@@ -423,7 +420,12 @@
             <div class="section-eyebrow">// SECTION 03 — ACADEMIC MILESTONES</div>
             <h2 class="section-title">ประวัติการศึกษา</h2>
           </div>
-          <div class="section-counter">03 / 06</div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <a href="education.html" class="btn-dock" style="text-decoration: none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดดูหน้าเดี่ยว (Dedicated Page)
+            </a>
+            <div class="section-counter">03 / 06</div>
+          </div>
         </div>
 
         <div class="timeline-track" id="educationTimelineTrack"></div>
@@ -443,7 +445,12 @@
             <div class="section-eyebrow">// SECTION 04 — CURRICULUM & ARTIFACTS</div>
             <h2 class="section-title">รายวิชาและชิ้นงาน</h2>
           </div>
-          <div class="section-counter">04 / 06</div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <a href="courses.html" class="btn-dock" style="text-decoration: none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดดูหน้าเดี่ยว (Dedicated Page)
+            </a>
+            <div class="section-counter">04 / 06</div>
+          </div>
         </div>
 
         <div class="category-filter-bar" id="courseFilterBar">
@@ -471,7 +478,12 @@
             <div class="section-eyebrow">// SECTION 05 — EXPERIENCES & HONORS</div>
             <h2 class="section-title">กิจกรรมและผลงาน</h2>
           </div>
-          <div class="section-counter">05 / 06</div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <a href="activities.html" class="btn-dock" style="text-decoration: none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดดูหน้าเดี่ยว (Dedicated Page)
+            </a>
+            <div class="section-counter">05 / 06</div>
+          </div>
         </div>
 
         <div class="category-filter-bar" id="activityFilterBar">
@@ -537,10 +549,7 @@
     </footer>
   </main>
 
-  <!-- ====================================================================
-       7. Hidden Admin Authentication Modal (Ctrl + Alt + P)
-       Username: O’Coner | Password: thanapat4444
-       ==================================================================== -->
+  <!-- Login Modal & CMS Dock -->
   <div class="modal-backdrop" id="adminLoginModal">
     <div class="admin-login-dialog hud-reticle">
       <div class="hud-reticle-tr"></div>
@@ -572,9 +581,6 @@
     </div>
   </div>
 
-  <!-- ====================================================================
-       8. Admin Floating Control Deck & CMS Studio (Visible after login)
-       ==================================================================== -->
   <div class="admin-dock" id="adminDock">
     <div class="admin-dock-bar hud-reticle">
       <div class="dock-badge">ADMIN ACTIVE</div>
@@ -602,9 +608,6 @@
     </div>
   </div>
 
-  <!-- ====================================================================
-       9. CMS Studio Modal (Appearance, Files, Supabase, Add Items)
-       ==================================================================== -->
   <div class="modal-backdrop" id="cmsStudioModal">
     <div class="admin-login-dialog hud-reticle" style="max-width: 650px; width: 95%;">
       <div class="hud-reticle-tr"></div>
@@ -621,7 +624,6 @@
     </div>
   </div>
 
-  <!-- Media Player Lightbox Modal -->
   <div class="modal-backdrop" id="mediaPlayerModal">
     <div class="admin-login-dialog hud-reticle" style="max-width: 800px; width: 95%; padding: 1.5rem;">
       <div class="dialog-header">
@@ -634,7 +636,6 @@
     </div>
   </div>
 
-  <!-- Core Scripts -->
   <script src="data.js"></script>
   <script src="db.js"></script>
   <script src="app.js"></script>

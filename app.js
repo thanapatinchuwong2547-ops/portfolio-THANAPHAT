@@ -22,7 +22,6 @@ class PortfolioApp {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Merge with defaults to ensure all fields exist
         return {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
@@ -46,8 +45,16 @@ class PortfolioApp {
   }
 
   init() {
+    // Apply Palette (defaulting to warm coffee tone)
+    const palette = this.data.siteSettings.palette || "coffee";
+    this.applyPalette(palette);
+
+    // Apply Dark / Light Theme
     this.applyTheme(this.data.siteSettings.theme || "dark");
-    this.applyAccentColor(this.data.siteSettings.accentColor || "#E05A2B");
+    if (this.data.siteSettings.accentColor) {
+      this.applyAccentColor(this.data.siteSettings.accentColor);
+    }
+
     this.initAudioContext();
     this.setupEventListeners();
     this.renderAll();
@@ -56,13 +63,23 @@ class PortfolioApp {
     this.renderCadBlueprint();
     this.initSupabase();
 
-    // Check if user was already logged in this session
     if (sessionStorage.getItem(this.authKey) === "authenticated") {
       this.activateAdminMode();
     }
   }
 
-  // Web Audio Context initialization
+  applyPalette(paletteName) {
+    document.documentElement.setAttribute("data-palette", paletteName);
+    this.data.siteSettings.palette = paletteName;
+    if (paletteName === "coffee") {
+      this.applyAccentColor("#C68642");
+    } else if (paletteName === "brick") {
+      this.applyAccentColor("#E05A2B");
+    } else if (paletteName === "amber") {
+      this.applyAccentColor("#FF9E1B");
+    }
+  }
+
   initAudioContext() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (AudioCtx) {
@@ -95,7 +112,6 @@ class PortfolioApp {
     }
   }
 
-  // Guitar / Bass Plucked String Audio Synthesizer
   playSynthNote(freq, noteName = "") {
     this.ensureAudio();
     if (!this.audioCtx) return;
@@ -103,7 +119,6 @@ class PortfolioApp {
     const ctx = this.audioCtx;
     const now = ctx.currentTime;
 
-    // Dual oscillator for rich plucked string harmonics
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
     const filter = ctx.createBiquadFilter();
@@ -113,15 +128,13 @@ class PortfolioApp {
     osc1.frequency.setValueAtTime(freq, now);
 
     osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(freq * 1.002, now); // slight chorus detune
+    osc2.frequency.setValueAtTime(freq * 1.002, now);
 
-    // Warm resonant lowpass filter envelope
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(Math.min(freq * 8, 3500), now);
     filter.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 1.2);
     filter.Q.value = 3;
 
-    // Pluck amplitude envelope
     gainNode.gain.setValueAtTime(0.3, now);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
 
@@ -140,12 +153,12 @@ class PortfolioApp {
 
   playChordRiff() {
     const notes = [
-      { f: 82.41, d: 250 },  // E2
-      { f: 98.00, d: 250 },  // G2
-      { f: 110.00, d: 250 }, // A2
-      { f: 123.47, d: 250 }, // B2
-      { f: 146.83, d: 300 }, // D3
-      { f: 164.81, d: 450 }  // E3
+      { f: 82.41, d: 250 },
+      { f: 98.00, d: 250 },
+      { f: 110.00, d: 250 },
+      { f: 123.47, d: 250 },
+      { f: 146.83, d: 300 },
+      { f: 164.81, d: 450 }
     ];
 
     let delay = 0;
@@ -166,8 +179,7 @@ class PortfolioApp {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Draw background reticle grid
-    ctx.strokeStyle = "rgba(224, 90, 43, 0.2)";
+    ctx.strokeStyle = "rgba(198, 134, 66, 0.2)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
@@ -181,8 +193,7 @@ class PortfolioApp {
       ctx.stroke();
     }
 
-    // Draw sine waveform
-    ctx.strokeStyle = this.data.siteSettings.accentColor || "#FF9E1B";
+    ctx.strokeStyle = this.data.siteSettings.accentColor || "#C68642";
     ctx.lineWidth = 2;
     ctx.shadowBlur = 8;
     ctx.shadowColor = ctx.strokeStyle;
@@ -199,7 +210,6 @@ class PortfolioApp {
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
-  // Timecode real-time ticker (00:01:24:18)
   startTimecodeTicker() {
     const el = document.getElementById("telemetryTimecode");
     const footerClock = document.getElementById("footerClock");
@@ -229,7 +239,6 @@ class PortfolioApp {
     }, 1000 / 24);
   }
 
-  // Render 24 segmented indicator bars (W [||||||] T from reference screenshot)
   renderSegmentedBars() {
     const container = document.getElementById("telemetrySegmentedBars");
     if (!container) return;
@@ -248,7 +257,6 @@ class PortfolioApp {
       container.appendChild(bar);
     }
 
-    // Dynamic wave animation for telemetry
     setInterval(() => {
       const bars = container.querySelectorAll(".seg-bar");
       const activeRadius = Math.floor(Math.random() * 5) + 4;
@@ -263,7 +271,6 @@ class PortfolioApp {
     }, 1200);
   }
 
-  // CAD / Blueprint Single Line Diagram simulation canvas
   renderCadBlueprint() {
     const canvas = document.getElementById("cadBlueprintCanvas");
     if (!canvas) return;
@@ -271,11 +278,10 @@ class PortfolioApp {
     const w = (canvas.width = canvas.offsetWidth || 300);
     const h = (canvas.height = canvas.offsetHeight || 180);
 
-    ctx.fillStyle = "#06080d";
+    ctx.fillStyle = "#0a0806";
     ctx.fillRect(0, 0, w, h);
 
-    // Fine grid lines
-    ctx.strokeStyle = "rgba(40, 50, 75, 0.4)";
+    ctx.strokeStyle = "rgba(198, 134, 66, 0.2)";
     ctx.lineWidth = 0.5;
     for (let x = 0; x < w; x += 15) {
       ctx.beginPath();
@@ -290,39 +296,33 @@ class PortfolioApp {
       ctx.stroke();
     }
 
-    // SLD Electrical Schematics (Busbar, Transformer, Feeder, Motor)
-    ctx.strokeStyle = "#ff9e1b";
+    ctx.strokeStyle = "#e0a96d";
     ctx.lineWidth = 1.5;
 
-    // Incoming 22kV Line
     ctx.beginPath();
     ctx.moveTo(w * 0.5, 10);
     ctx.lineTo(w * 0.5, 40);
     ctx.stroke();
 
-    // Transformer Dual Circles
     ctx.beginPath();
     ctx.arc(w * 0.5, 50, 10, 0, Math.PI * 2);
     ctx.arc(w * 0.5, 65, 10, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Line to Main Busbar
     ctx.beginPath();
     ctx.moveTo(w * 0.5, 75);
     ctx.lineTo(w * 0.5, 95);
     ctx.stroke();
 
-    // Main 400V 3Φ Busbar (Bold horizontal line)
-    ctx.strokeStyle = "#e05a2b";
+    ctx.strokeStyle = "#c68642";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(w * 0.15, 95);
     ctx.lineTo(w * 0.85, 95);
     ctx.stroke();
 
-    // Feeders branching down
     const feeders = [0.25, 0.5, 0.75];
-    ctx.strokeStyle = "#9aa5bc";
+    ctx.strokeStyle = "#b0a194";
     ctx.lineWidth = 1;
 
     feeders.forEach((pos, idx) => {
@@ -330,25 +330,22 @@ class PortfolioApp {
       ctx.beginPath();
       ctx.moveTo(x, 95);
       ctx.lineTo(x, 120);
-      // Circuit Breaker symbol
       ctx.rect(x - 5, 120, 10, 15);
       ctx.moveTo(x, 135);
       ctx.lineTo(x, 150);
       ctx.stroke();
 
-      // Motor M symbol at bottom
       ctx.beginPath();
       ctx.arc(x, 160, 10, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = "#ff9e1b";
+      ctx.fillStyle = "#e0a96d";
       ctx.font = "8px JetBrains Mono";
       ctx.textAlign = "center";
       ctx.fillText(idx === 1 ? "M2 (PLC)" : `M${idx + 1}`, x, 163);
     });
   }
 
-  // System Highlights accordion toggle
   toggleAccordion(headerEl) {
     const item = headerEl.closest(".spec-item");
     if (!item) return;
@@ -361,7 +358,6 @@ class PortfolioApp {
     }
   }
 
-  // Theme Management
   applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     this.data.siteSettings.theme = theme;
@@ -379,7 +375,7 @@ class PortfolioApp {
     document.documentElement.style.setProperty("--accent-primary", hex);
     this.data.siteSettings.accentColor = hex;
   }
-  // Dynamic Rendering Engine
+
   renderAll() {
     this.renderProfile();
     this.renderSkills();
@@ -388,11 +384,9 @@ class PortfolioApp {
     this.renderActivities(this.currentActivityFilter || "all");
   }
 
-  // Profile data & dynamic age calculation
   renderProfile() {
     const p = this.data.profile;
 
-    // Calculate dynamic age from birthDateIso
     if (p.birthDateIso) {
       const birth = new Date(p.birthDateIso);
       const diff = Date.now() - birth.getTime();
@@ -402,7 +396,6 @@ class PortfolioApp {
       if (ageEl) ageEl.textContent = `${age} ปี`;
     }
 
-    // Bind all [data-cms-key] elements
     document.querySelectorAll("[data-cms-key]").forEach((el) => {
       const keyPath = el.getAttribute("data-cms-key").split(".");
       let val = this.data;
@@ -418,26 +411,24 @@ class PortfolioApp {
       }
     });
 
-    // Avatar preview
-    if (p.avatarUrl) {
-      const heroImg = document.getElementById("heroPortraitImg");
-      const heroPlaceholder = document.getElementById("heroPortraitPlaceholder");
-      const cardImg = document.getElementById("profileCardAvatar");
-      const cardPlaceholder = document.getElementById("profileCardPlaceholder");
+    // Default to the uploaded portrait image
+    const avatarSrc = p.avatarUrl || "assets/profile.jpg";
+    const heroImg = document.getElementById("heroPortraitImg");
+    const heroPlaceholder = document.getElementById("heroPortraitPlaceholder");
+    const cardImg = document.getElementById("profileCardAvatar");
+    const cardPlaceholder = document.getElementById("profileCardPlaceholder");
 
-      if (heroImg && heroPlaceholder) {
-        heroImg.src = p.avatarUrl;
-        heroImg.classList.add("active");
-        heroPlaceholder.style.display = "none";
-      }
-      if (cardImg && cardPlaceholder) {
-        cardImg.src = p.avatarUrl;
-        cardImg.style.display = "block";
-        cardPlaceholder.style.display = "none";
-      }
+    if (heroImg) {
+      heroImg.src = avatarSrc;
+      heroImg.classList.add("active");
+      if (heroPlaceholder) heroPlaceholder.style.display = "none";
+    }
+    if (cardImg) {
+      cardImg.src = avatarSrc;
+      cardImg.style.display = "block";
+      if (cardPlaceholder) cardPlaceholder.style.display = "none";
     }
   }
-
   renderSkills() {
     const container = document.getElementById("skillsContainer");
     if (!container) return;
@@ -519,7 +510,7 @@ class PortfolioApp {
   filterCourses(cat) {
     this.currentCourseFilter = cat;
     document.querySelectorAll("#courseFilterBar .filter-btn").forEach((b) => b.classList.remove("active"));
-    event.target.classList.add("active");
+    if (event && event.target) event.target.classList.add("active");
     this.renderCourses(cat);
     this.playTacticalBeep(700, "sine", 0.04);
   }
@@ -573,7 +564,7 @@ class PortfolioApp {
   filterActivities(cat) {
     this.currentActivityFilter = cat;
     document.querySelectorAll("#activityFilterBar .filter-btn").forEach((b) => b.classList.remove("active"));
-    event.target.classList.add("active");
+    if (event && event.target) event.target.classList.add("active");
     this.renderActivities(cat);
     this.playTacticalBeep(700, "sine", 0.04);
   }
@@ -604,13 +595,10 @@ class PortfolioApp {
       container.appendChild(card);
     });
   }
-  // Event Listeners Setup
   setupEventListeners() {
-    // Theme toggle button
     const themeBtn = document.getElementById("themeToggleBtn");
     if (themeBtn) themeBtn.addEventListener("click", () => this.toggleTheme());
 
-    // Sound toggle button
     const soundBtn = document.getElementById("soundToggleBtn");
     if (soundBtn) {
       soundBtn.addEventListener("click", () => {
@@ -622,11 +610,9 @@ class PortfolioApp {
       });
     }
 
-    // Secret Login Modal Trigger (Lock icon fallback)
     const lockBtn = document.getElementById("adminKeyholeBtn");
     if (lockBtn) lockBtn.addEventListener("click", () => this.openLoginModal());
 
-    // Secret Keyboard Shortcut: Ctrl + Alt + P
     window.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP")) {
         e.preventDefault();
@@ -634,11 +620,9 @@ class PortfolioApp {
       }
     });
 
-    // Quick Print / Dossier
     const dossierBtn = document.getElementById("quickDossierBtn");
     if (dossierBtn) dossierBtn.addEventListener("click", () => window.print());
 
-    // Play Field Media Video
     const playMediaBtn = document.getElementById("playFieldMediaBtn");
     if (playMediaBtn) {
       playMediaBtn.addEventListener("click", () => {
@@ -648,7 +632,6 @@ class PortfolioApp {
       });
     }
 
-    // Avatar direct upload listener
     const avatarInput = document.getElementById("avatarUploadInput");
     if (avatarInput) {
       avatarInput.addEventListener("change", async (e) => {
@@ -667,10 +650,6 @@ class PortfolioApp {
     }
   }
 
-  // =========================================================================
-  // Hidden Admin Login System (Ctrl + Alt + P)
-  // Username: O’Coner | Password: thanapat4444
-  // =========================================================================
   openLoginModal() {
     this.playTacticalBeep(920, "sine", 0.06);
     const modal = document.getElementById("adminLoginModal");
@@ -693,7 +672,6 @@ class PortfolioApp {
     const pInput = document.getElementById("loginPassword").value.trim();
     const errEl = document.getElementById("loginErrorMsg");
 
-    // Normalize usernames (support curly quote, straight quote, and case)
     const validUsernames = ["O’Coner", "O'Coner", "OConer", "oconer", "o'coner"];
     const validPassword = "thanapat4444";
 
@@ -725,9 +703,6 @@ class PortfolioApp {
     alert("ออกจากระบบผู้ดูแลเรียบร้อยแล้ว");
   }
 
-  // =========================================================================
-  // In-Browser CMS Inline Editing Mode
-  // =========================================================================
   toggleInlineEdit() {
     this.isEditing = !this.isEditing;
     const statusText = document.getElementById("inlineEditStatus");
@@ -758,9 +733,7 @@ class PortfolioApp {
       });
     }
   }
-  // =========================================================================
-  // CMS Studio Modals & Management
-  // =========================================================================
+
   openCMSModal(type) {
     const modal = document.getElementById("cmsStudioModal");
     const title = document.getElementById("cmsModalTitle");
@@ -770,17 +743,17 @@ class PortfolioApp {
     modal.classList.add("open");
 
     if (type === "theme") {
-      title.innerHTML = `<i class="fa-solid fa-palette"></i> ตกแต่งหน้าตาและเอฟเฟกต์เว็บ (THEME STUDIO)`;
+      title.innerHTML = `<i class="fa-solid fa-palette"></i> ตกแต่งหน้าตาและโทนสีเว็บ (THEME STUDIO)`;
       body.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
           <div>
-            <label class="form-label">ชุดโทนสีอุ่นหลัก (TACTICAL ACCENT PALETTE)</label>
-            <div style="display: flex; gap: 10px; margin-top: 8px;">
-              <button class="btn-dock" style="background: #E05A2B; color: #fff;" onclick="window.app.applyAccentColor('#E05A2B'); window.app.saveData();">Terracotta Brick</button>
-              <button class="btn-dock" style="background: #C0392B; color: #fff;" onclick="window.app.applyAccentColor('#C0392B'); window.app.saveData();">Deep Brick Red</button>
-              <button class="btn-dock" style="background: #FF9E1B; color: #000;" onclick="window.app.applyAccentColor('#FF9E1B'); window.app.saveData();">Tactical Amber</button>
-              <button class="btn-dock" style="background: #D35400; color: #fff;" onclick="window.app.applyAccentColor('#D35400'); window.app.saveData();">Burnt Orange</button>
-              <button class="btn-dock" style="background: #FF6F00; color: #000;" onclick="window.app.applyAccentColor('#FF6F00'); window.app.saveData();">Tangerine</button>
+            <label class="form-label">ชุดโทนสีอุ่นหลัก (TACTICAL PALETTES)</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+              <button class="btn-dock" style="background: #C68642; color: #fff; font-weight: 700;" onclick="window.app.applyPalette('coffee'); window.app.saveData();">☕ โทนสีกาแฟ (Coffee Roast)</button>
+              <button class="btn-dock" style="background: #E05A2B; color: #fff;" onclick="window.app.applyPalette('brick'); window.app.saveData();">🧱 ส้มดินเผา (Terracotta)</button>
+              <button class="btn-dock" style="background: #C0392B; color: #fff;" onclick="window.app.applyAccentColor('#C0392B'); window.app.saveData();">🟥 แดงอิฐ (Deep Brick)</button>
+              <button class="btn-dock" style="background: #FF9E1B; color: #000;" onclick="window.app.applyPalette('amber'); window.app.saveData();">🟡 ส้มอำพัน (Tactical Amber)</button>
+              <button class="btn-dock" style="background: #D35400; color: #fff;" onclick="window.app.applyAccentColor('#D35400'); window.app.saveData();">🔥 ส้มไหม้ (Burnt Orange)</button>
             </div>
           </div>
 
@@ -832,10 +805,7 @@ class PortfolioApp {
             <button class="btn-dock active" id="tabNewCourse" onclick="window.app.switchItemTab('course')">เพิ่มรายวิชา (New Course)</button>
             <button class="btn-dock" id="tabNewActivity" onclick="window.app.switchItemTab('activity')">เพิ่มกิจกรรม/ผลงาน (New Activity)</button>
           </div>
-
-          <div id="newItemFormContainer">
-            <!-- Dynamic form based on tab -->
-          </div>
+          <div id="newItemFormContainer"></div>
         </div>
       `;
       this.switchItemTab("course");
@@ -884,7 +854,6 @@ class PortfolioApp {
     this.saveData();
   }
 
-  // Universal File Upload Handler
   async handleUniversalFileUpload(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -1081,7 +1050,6 @@ class PortfolioApp {
     alert("เพิ่มกิจกรรม/ผลงานสำเร็จแล้ว!");
   }
 
-  // Backup & Restore
   exportDataJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data, null, 2));
     const a = document.createElement("a");
@@ -1092,7 +1060,6 @@ class PortfolioApp {
     a.remove();
   }
 
-  // Media Modal Lightbox
   openMediaModal(contentHtml) {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
@@ -1124,7 +1091,6 @@ class PortfolioApp {
     }
   }
 
-  // Supabase Cloud Integration
   initSupabase() {
     const s = this.data.siteSettings.supabase;
     if (s && s.url && s.anonKey && window.supabase) {
@@ -1188,7 +1154,6 @@ class PortfolioApp {
   }
 }
 
-// Bootstrap Application on DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
   window.app = new PortfolioApp();
 });
