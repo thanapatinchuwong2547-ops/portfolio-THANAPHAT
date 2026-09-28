@@ -73,6 +73,8 @@ class PortfolioApp {
 
     this.initAudioContext();
     this.setupEventListeners();
+    this.setupSecretGreenTrigger();
+    this.initProfilePaneOrdering();
     this.renderAll();
     this.startTimecodeTicker();
     this.renderSegmentedBars();
@@ -252,6 +254,9 @@ class PortfolioApp {
       const tc = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(frames)}`;
       if (el) el.textContent = tc;
       if (footerClock) footerClock.textContent = tc;
+      document.querySelectorAll(".timecode-val").forEach(item => {
+        item.textContent = tc;
+      });
     }, 1000 / 24);
   }
 
@@ -398,6 +403,7 @@ class PortfolioApp {
     this.renderEducation();
     this.renderCourses(this.currentCourseFilter || "all");
     this.renderActivities(this.currentActivityFilter || "all");
+    this.applyProfilePaneOrder();
   }
 
   renderProfile() {
@@ -595,22 +601,54 @@ class PortfolioApp {
         </div>
         <div class="artifacts-list">
           ${(c.artifacts && c.artifacts.length > 0)
-            ? c.artifacts.map((art, artIdx) => `
-              <div class="artifact-item">
-                <div style="flex-grow: 1; padding-right: 8px;">
-                  <div class="artifact-name"><i class="fa-solid fa-file-lines" style="color: var(--accent-amber); margin-right: 6px;"></i>${art.name}</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">${art.summary || ""}</div>
-                </div>
-                <div style="display: flex; gap: 4px; align-items: center;">
-                  <button class="btn-dock" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.app.previewArtifact('${art.name}', '${art.fileUrl || ""}')">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิด
-                  </button>
-                  <button class="btn-dock" style="padding: 2px 6px; font-size: 0.7rem; color: var(--signal-rec);" onclick="window.app.deleteArtifact('${c.id}', ${artIdx})" title="ลบชิ้นงานนี้">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                </div>
-              </div>
-            `).join("")
+            ? c.artifacts.map((art, artIdx) => {
+                const atts = art.attachments || [];
+                const imgAtts = atts.filter(a => a.type === "image" && a.url);
+                const pdfAtts = atts.filter(a => a.type === "pdf" && a.url);
+                const ytAtts = atts.filter(a => a.type === "youtube" && a.url);
+                if (atts.length === 0 && art.fileUrl) {
+                  pdfAtts.push({ type: "pdf", name: art.name || "เอกสาร", url: art.fileUrl });
+                }
+
+                return `
+                  <div class="artifact-item" style="flex-direction: column; align-items: stretch; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                      <div style="flex-grow: 1;">
+                        <div class="artifact-name"><i class="fa-solid fa-file-lines" style="color: var(--accent-amber); margin-right: 6px;"></i>${this.escapeHtml(art.name)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${this.escapeHtml(art.summary || "")}</div>
+                      </div>
+                      <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                        <button class="btn-dock" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.app.editArtifact('${c.id}', ${artIdx})" title="แก้ไขชิ้นงานนี้">
+                          <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-dock" style="padding: 2px 6px; font-size: 0.7rem; color: var(--signal-rec);" onclick="window.app.deleteArtifact('${c.id}', ${artIdx})" title="ลบชิ้นงานนี้">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    ${(imgAtts.length > 0 || pdfAtts.length > 0 || ytAtts.length > 0) ? `
+                      <div class="media-chips-row" style="margin: 2px 0 0 0;">
+                        ${imgAtts.length > 0 ? `
+                          <button type="button" class="media-chip chip-gallery" onclick="window.app.openGalleryModal(${JSON.stringify(imgAtts).replace(/"/g, '&quot;')}, 0)">
+                            <i class="fa-solid fa-images"></i> รูปภาพ (${imgAtts.length})
+                          </button>
+                        ` : ''}
+                        ${pdfAtts.map(pdf => `
+                          <button type="button" class="media-chip chip-pdf" onclick="window.app.openPdfModal('${encodeURIComponent(pdf.url)}', '${encodeURIComponent(pdf.name || 'เอกสาร PDF')}')">
+                            <i class="fa-solid fa-file-pdf"></i> ${this.escapeHtml(pdf.name || 'เอกสาร PDF')}
+                          </button>
+                        `).join('')}
+                        ${ytAtts.map(yt => `
+                          <button type="button" class="media-chip chip-youtube" onclick="window.app.openYouTubeModal('${encodeURIComponent(yt.url)}', '${encodeURIComponent(yt.name || 'วิดีโอสาธิต')}')">
+                            <i class="fa-brands fa-youtube"></i> ${this.escapeHtml(yt.name || 'วิดีโอสาธิต')}
+                          </button>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join("")
             : `<div style="font-size: 0.78rem; color: var(--text-muted); padding: 6px 0;">ยังไม่มีชิ้นงานแนบในวิชานี้</div>`
           }
         </div>
@@ -730,11 +768,8 @@ class PortfolioApp {
           <label class="form-label">คำอธิบายสรุปชิ้นงาน</label>
           <textarea id="newArtSummary" class="form-control" rows="2" placeholder="เช่น รายละเอียดแบบแปลน เอกสาร หรือโครงงาน"></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">URL เอกสาร/ไฟล์ชิ้นงาน (ปล่อยว่างหรือระบุลิงก์ไฟล์)</label>
-          <input type="text" id="newArtUrl" class="form-control" placeholder="https://... หรือปล่อยว่าง">
-        </div>
-        <div style="display: flex; gap: 10px;">
+        ${this.getHTMLAttachmentBuilderUI()}
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitNewArtifact('${c.id}')">
             <i class="fa-solid fa-check"></i> บันทึกชิ้นงาน
           </button>
@@ -745,6 +780,7 @@ class PortfolioApp {
       </div>
     `;
     modal.classList.add("open");
+    this.initAttachmentsBuilder([]);
   }
 
   submitNewArtifact(courseId) {
@@ -753,7 +789,6 @@ class PortfolioApp {
 
     const name = document.getElementById("newArtName").value.trim();
     const summary = document.getElementById("newArtSummary").value.trim();
-    const url = document.getElementById("newArtUrl").value.trim();
 
     if (!name) {
       alert("โปรดระบุชื่อชิ้นงาน");
@@ -761,11 +796,13 @@ class PortfolioApp {
     }
 
     if (!c.artifacts) c.artifacts = [];
+    const atts = (this.currentEditingAttachments || []).filter(a => a.url || a.name);
     c.artifacts.push({
       name: name,
       summary: summary || "",
-      fileUrl: url || "",
-      type: "project"
+      fileUrl: atts.length > 0 ? atts[0].url : "",
+      type: "project",
+      attachments: atts
     });
 
     this.saveData();
@@ -773,6 +810,75 @@ class PortfolioApp {
     this.closeCMSModal();
     this.playTacticalBeep(900, "triangle", 0.08);
     alert(`เพิ่มชิ้นงานในวิชา ${c.code} สำเร็จแล้ว!`);
+  }
+
+  editArtifact(courseId, artifactIdx) {
+    if (!this.checkAdminOrPrompt("แก้ไขชิ้นงาน")) return;
+    const c = this.data.courses.find((item) => item.id === courseId);
+    if (!c || !c.artifacts || !c.artifacts[artifactIdx]) return;
+    const art = c.artifacts[artifactIdx];
+
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไขชิ้นงานในวิชา: ${c.code}`;
+    body.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">ชื่อชิ้นงาน (ARTIFACT NAME)</label>
+          <input type="text" id="editArtName" class="form-control" value="${this.escapeHtml(art.name || '')}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">คำอธิบายสรุปชิ้นงาน</label>
+          <textarea id="editArtSummary" class="form-control" rows="2">${this.escapeHtml(art.summary || '')}</textarea>
+        </div>
+        ${this.getHTMLAttachmentBuilderUI()}
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitEditArtifact('${c.id}', ${artifactIdx})">
+            <i class="fa-solid fa-check"></i> บันทึกการแก้ไขชิ้นงาน
+          </button>
+          <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("open");
+    let initialAtts = art.attachments || [];
+    if (initialAtts.length === 0 && art.fileUrl) {
+      initialAtts = [{ id: 'att_init', type: 'pdf', name: art.name, url: art.fileUrl }];
+    }
+    this.initAttachmentsBuilder(initialAtts);
+  }
+
+  submitEditArtifact(courseId, artifactIdx) {
+    const c = this.data.courses.find((item) => item.id === courseId);
+    if (!c || !c.artifacts || !c.artifacts[artifactIdx]) return;
+    const art = c.artifacts[artifactIdx];
+
+    const name = document.getElementById("editArtName").value.trim();
+    const summary = document.getElementById("editArtSummary").value.trim();
+
+    if (!name) {
+      alert("โปรดระบุชื่อชิ้นงาน");
+      return;
+    }
+
+    art.name = name;
+    art.summary = summary;
+    art.attachments = (this.currentEditingAttachments || []).filter(a => a.url || a.name);
+    if (art.attachments.length > 0) {
+      art.fileUrl = art.attachments[0].url || "";
+    }
+
+    this.saveData();
+    this.renderCourses(this.currentCourseFilter || "all");
+    this.closeCMSModal();
+    this.playTacticalBeep(900, "triangle", 0.08);
+    alert(`บันทึกการแก้ไขชิ้นงาน "${name}" เรียบร้อยแล้ว!`);
   }
 
   deleteArtifact(courseId, artifactIdx) {
@@ -824,15 +930,42 @@ class PortfolioApp {
       card.className = "activity-card hud-reticle";
       const defaultImg = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80";
 
+      const atts = act.attachments || [];
+      const imgAtts = atts.filter(a => a.type === "image" && a.url);
+      const pdfAtts = atts.filter(a => a.type === "pdf" && a.url);
+      const ytAtts = atts.filter(a => a.type === "youtube" && a.url);
+      const coverImg = imgAtts.length > 0 ? imgAtts[0].url : (act.imageUrl || defaultImg);
+
       card.innerHTML = `
         <div class="activity-media-box">
-          <img src="${act.imageUrl || defaultImg}" alt="${act.title}" class="activity-img">
+          <img src="${coverImg}" alt="${this.escapeHtml(act.title)}" class="activity-img" onclick="window.app.openGalleryModal('${act.id}', 0)" style="cursor: pointer;" title="คลิกเพื่อดูรูปภาพขนาดใหญ่">
           <div class="activity-badge">${act.badge || "ACHIEVEMENT"}</div>
         </div>
         <div class="activity-body">
           <div class="activity-date"><i class="fa-regular fa-calendar"></i> ${act.date} • ${act.place || ""}</div>
           <h3 class="activity-title">${act.title}</h3>
           <p class="activity-summary">${act.summary}</p>
+          
+          ${(imgAtts.length > 1 || pdfAtts.length > 0 || ytAtts.length > 0) ? `
+            <div class="media-chips-row">
+              ${imgAtts.length > 1 ? `
+                <button type="button" class="media-chip chip-gallery" onclick="window.app.openGalleryModal('${act.id}', 0)">
+                  <i class="fa-solid fa-images"></i> รูปภาพ (${imgAtts.length})
+                </button>
+              ` : ''}
+              ${pdfAtts.map(pdf => `
+                <button type="button" class="media-chip chip-pdf" onclick="window.app.openPdfModal('${encodeURIComponent(pdf.url)}', '${encodeURIComponent(pdf.name || 'เอกสาร PDF')}')">
+                  <i class="fa-solid fa-file-pdf"></i> ${this.escapeHtml(pdf.name || 'เอกสาร PDF')}
+                </button>
+              `).join('')}
+              ${ytAtts.map(yt => `
+                <button type="button" class="media-chip chip-youtube" onclick="window.app.openYouTubeModal('${encodeURIComponent(yt.url)}', '${encodeURIComponent(yt.name || 'วิดีโอสาธิต')}')">
+                  <i class="fa-brands fa-youtube"></i> ${this.escapeHtml(yt.name || 'วิดีโอสาธิต')}
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
+
           <div class="card-mgmt-actions" style="margin-top: auto; padding-top: 1rem; border-top: 1px dashed var(--border-hairline); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
             <button class="btn-dock" style="font-size: 0.72rem; padding: 4px 10px;" onclick="window.app.editActivity('${act.id}')">
               <i class="fa-solid fa-pen"></i> แก้ไขผลงาน
@@ -875,7 +1008,7 @@ class PortfolioApp {
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div class="form-group">
           <label class="form-label">ชื่อกิจกรรมหรือผลงาน</label>
-          <input type="text" id="editActTitle" class="form-control" value="${act.title || ""}" required>
+          <input type="text" id="editActTitle" class="form-control" value="${this.escapeHtml(act.title || "")}" required>
         </div>
         <div class="form-group">
           <label class="form-label">หมวดหมู่</label>
@@ -888,21 +1021,18 @@ class PortfolioApp {
         </div>
         <div class="form-group">
           <label class="form-label">ป้ายสถานะ (BADGE)</label>
-          <input type="text" id="editActBadge" class="form-control" value="${act.badge || "ACHIEVEMENT"}">
+          <input type="text" id="editActBadge" class="form-control" value="${this.escapeHtml(act.badge || "ACHIEVEMENT")}">
         </div>
         <div class="form-group">
           <label class="form-label">ช่วงเวลาและสถานที่</label>
-          <input type="text" id="editActDate" class="form-control" value="${act.date || ""}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">URL รูปภาพผลงาน (หรือปล่อยว่างเพื่อใช้รูปมาตรฐาน)</label>
-          <input type="text" id="editActImg" class="form-control" value="${act.imageUrl || ""}">
+          <input type="text" id="editActDate" class="form-control" value="${this.escapeHtml(act.date || "")}">
         </div>
         <div class="form-group">
           <label class="form-label">คำอธิบายรายละเอียด</label>
-          <textarea id="editActSummary" class="form-control" rows="3">${act.summary || ""}</textarea>
+          <textarea id="editActSummary" class="form-control" rows="3">${this.escapeHtml(act.summary || "")}</textarea>
         </div>
-        <div style="display: flex; gap: 10px;">
+        ${this.getHTMLAttachmentBuilderUI()}
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitEditActivity('${act.id}')">
             <i class="fa-solid fa-check"></i> บันทึกการแก้ไข
           </button>
@@ -913,6 +1043,12 @@ class PortfolioApp {
       </div>
     `;
     modal.classList.add("open");
+
+    let initialAtts = act.attachments || [];
+    if (initialAtts.length === 0 && act.imageUrl) {
+      initialAtts = [{ id: 'att_cover', type: 'image', name: 'รูปภาพหน้าปก', url: act.imageUrl }];
+    }
+    this.initAttachmentsBuilder(initialAtts);
   }
 
   submitEditActivity(id) {
@@ -923,8 +1059,11 @@ class PortfolioApp {
     act.category = document.getElementById("editActCat").value;
     act.badge = document.getElementById("editActBadge").value.trim() || "ACHIEVEMENT";
     act.date = document.getElementById("editActDate").value.trim();
-    act.imageUrl = document.getElementById("editActImg").value.trim();
     act.summary = document.getElementById("editActSummary").value.trim();
+
+    act.attachments = (this.currentEditingAttachments || []).filter(a => a.url || a.name);
+    const coverImg = act.attachments.find(a => a.type === "image")?.url;
+    if (coverImg) act.imageUrl = coverImg;
 
     this.saveData();
     this.renderActivities(this.currentActivityFilter || "all");
@@ -1316,6 +1455,10 @@ class PortfolioApp {
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">ป้ายสถานะ (BADGE)</label>
+            <input type="text" id="newActBadge" class="form-control" placeholder="เช่น AWARDS & HONORS หรือ CERTIFICATION" value="ACHIEVEMENT">
+          </div>
+          <div class="form-group">
             <label class="form-label">ช่วงเวลาและสถานที่</label>
             <input type="text" id="newActDate" class="form-control" placeholder="เช่น กุมภาพันธ์ 2568 • มทร.อีสาน">
           </div>
@@ -1323,11 +1466,13 @@ class PortfolioApp {
             <label class="form-label">คำอธิบายรายละเอียด</label>
             <textarea id="newActSummary" class="form-control" rows="2" placeholder="บทบาทและผลลัพธ์ของกิจกรรม"></textarea>
           </div>
-          <button class="btn-tactical btn-tactical-primary" onclick="window.app.submitNewActivity()">
+          ${this.getHTMLAttachmentBuilderUI()}
+          <button class="btn-tactical btn-tactical-primary" style="margin-top: 10px;" onclick="window.app.submitNewActivity()">
             <i class="fa-solid fa-check"></i> บันทึกกิจกรรมใหม่
           </button>
         </div>
       `;
+      this.initAttachmentsBuilder([]);
     }
   }
 
@@ -1362,6 +1507,7 @@ class PortfolioApp {
   submitNewActivity() {
     const title = document.getElementById("newActTitle").value.trim();
     const cat = document.getElementById("newActCat").value;
+    const badge = (document.getElementById("newActBadge")?.value.trim()) || "ACHIEVEMENT";
     const date = document.getElementById("newActDate").value.trim();
     const summary = document.getElementById("newActSummary").value.trim();
 
@@ -1370,20 +1516,25 @@ class PortfolioApp {
       return;
     }
 
+    const atts = (this.currentEditingAttachments || []).filter(a => a.url || a.name);
+    const coverImg = atts.find(a => a.type === "image")?.url || "";
+
     const item = {
       id: `act_${Date.now()}`,
       title: title,
       category: cat,
       date: date || "ปีการศึกษา 2568",
-      badge: "ACTIVITY",
+      badge: badge,
       summary: summary || "รายละเอียดกิจกรรม",
-      imageUrl: ""
+      imageUrl: coverImg,
+      attachments: atts
     };
 
     this.data.activities.unshift(item);
     this.saveData();
     this.renderActivities(this.currentActivityFilter || "all");
     this.closeCMSModal();
+    this.playTacticalBeep(900, "triangle", 0.08);
     alert("เพิ่มกิจกรรม/ผลงานสำเร็จแล้ว!");
   }
 
@@ -1524,6 +1675,422 @@ class PortfolioApp {
     if (dbStatus) {
       dbStatus.textContent = msg || (this.supabaseClient ? "SUPABASE_CLOUD: SYNCED" : "INDEXED_DB + LOCAL");
     }
+  }
+
+  // --- Secret Green Trigger (3 Clicks) ---
+  setupSecretGreenTrigger() {
+    let clickCount = 0;
+    let clickTimer = null;
+
+    document.addEventListener("click", (e) => {
+      const trigger = e.target.closest(".secret-green-trigger") || (e.target.classList && e.target.classList.contains("text-green") ? e.target : null);
+      if (!trigger) return;
+
+      clickCount++;
+      this.playTacticalBeep(650 + (clickCount * 180), "triangle", 0.04);
+
+      trigger.classList.remove("secret-trigger-pulse");
+      void trigger.offsetWidth; // re-flow
+      trigger.classList.add("secret-trigger-pulse");
+
+      if (clickTimer) clearTimeout(clickTimer);
+
+      if (clickCount >= 3) {
+        clickCount = 0;
+        this.playTacticalBeep(1250, "sine", 0.16);
+        if (sessionStorage.getItem(this.authKey) === "authenticated") {
+          alert("โหมดผู้ดูแลระบบ (ADMIN) กำลังทำงานอยู่แล้ว!");
+          const dock = document.getElementById("adminDock");
+          if (dock) dock.scrollIntoView({ behavior: "smooth" });
+        } else {
+          this.openLoginModal();
+        }
+      } else {
+        clickTimer = setTimeout(() => {
+          clickCount = 0;
+        }, 1200);
+      }
+    });
+  }
+
+  // --- Profile Content Pane Reordering & Drag & Drop ---
+  initProfilePaneOrdering() {
+    if (!this.data.profile.paneOrder) {
+      this.data.profile.paneOrder = ["bio", "skills", "music"];
+    }
+    this.applyProfilePaneOrder();
+    this.setupProfilePaneDragAndDrop();
+  }
+
+  applyProfilePaneOrder() {
+    const pane = document.querySelector(".profile-content-pane");
+    if (!pane) return;
+    const order = this.data.profile.paneOrder || ["bio", "skills", "music"];
+
+    order.forEach((id) => {
+      const el = pane.querySelector(`[data-pane-id="${id}"]`);
+      if (el) pane.appendChild(el);
+    });
+  }
+
+  moveProfileCard(paneId, direction) {
+    if (!this.data.profile.paneOrder) {
+      this.data.profile.paneOrder = ["bio", "skills", "music"];
+    }
+    const order = [...this.data.profile.paneOrder];
+    const idx = order.indexOf(paneId);
+    if (idx === -1) return;
+
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= order.length) return;
+
+    const temp = order[idx];
+    order[idx] = order[targetIdx];
+    order[targetIdx] = temp;
+
+    this.data.profile.paneOrder = order;
+    this.saveData();
+    this.applyProfilePaneOrder();
+    this.playTacticalBeep(780, "sine", 0.05);
+  }
+
+  setupProfilePaneDragAndDrop() {
+    const pane = document.querySelector(".profile-content-pane");
+    if (!pane) return;
+
+    const cards = pane.querySelectorAll("[data-pane-id]");
+    cards.forEach((card) => {
+      card.setAttribute("draggable", "true");
+
+      card.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", card.getAttribute("data-pane-id"));
+        card.classList.add("pane-dragging");
+      });
+
+      card.addEventListener("dragend", () => {
+        card.classList.remove("pane-dragging");
+        pane.querySelectorAll("[data-pane-id]").forEach((c) => c.classList.remove("pane-drag-over"));
+      });
+
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        card.classList.add("pane-drag-over");
+      });
+
+      card.addEventListener("dragleave", () => {
+        card.classList.remove("pane-drag-over");
+      });
+
+      card.addEventListener("drop", (e) => {
+        e.preventDefault();
+        card.classList.remove("pane-drag-over");
+        const sourceId = e.dataTransfer.getData("text/plain");
+        const targetId = card.getAttribute("data-pane-id");
+        if (!sourceId || !targetId || sourceId === targetId) return;
+
+        const order = [...(this.data.profile.paneOrder || ["bio", "skills", "music"])];
+        const srcIdx = order.indexOf(sourceId);
+        const tgtIdx = order.indexOf(targetId);
+        if (srcIdx > -1 && tgtIdx > -1) {
+          order.splice(srcIdx, 1);
+          order.splice(tgtIdx, 0, sourceId);
+          this.data.profile.paneOrder = order;
+          this.saveData();
+          this.applyProfilePaneOrder();
+          this.playTacticalBeep(850, "sine", 0.06);
+        }
+      });
+    });
+  }
+
+  // --- Attachments & Media Manager ---
+  initAttachmentsBuilder(initialList = []) {
+    this.currentEditingAttachments = JSON.parse(JSON.stringify(initialList));
+    this.renderAttachmentRows();
+  }
+
+  renderAttachmentRows() {
+    const container = document.getElementById("attachmentRowsContainer");
+    if (!container) return;
+
+    if (!this.currentEditingAttachments || this.currentEditingAttachments.length === 0) {
+      container.innerHTML = `
+        <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 12px; border: 1px dashed var(--border-hairline);">
+          ยังไม่มีไฟล์แนบ — คลิกปุ่มด้านบนเพื่อเพิ่มรูปภาพ, PDF หรือคลิป YouTube ได้มากกว่า 1 รายการ
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.currentEditingAttachments.map((att, idx) => {
+      let icon = "fa-solid fa-file";
+      let tagClass = "tag-image";
+      let tagLabel = "รูปภาพ";
+      let placeholder = "URL รูปภาพ หรือคลิกเลือกไฟล์";
+
+      if (att.type === "pdf") {
+        icon = "fa-solid fa-file-pdf";
+        tagClass = "tag-pdf";
+        tagLabel = "PDF";
+        placeholder = "URL ไฟล์ PDF หรือคลิกเลือกไฟล์";
+      } else if (att.type === "youtube") {
+        icon = "fa-brands fa-youtube";
+        tagClass = "tag-youtube";
+        tagLabel = "YouTube";
+        placeholder = "https://www.youtube.com/watch?v=... หรือ https://youtu.be/...";
+      }
+
+      return `
+        <div class="attachment-row-item" data-att-idx="${idx}">
+          <div class="att-type-tag ${tagClass}">
+            <i class="${icon}"></i> ${tagLabel}
+          </div>
+          <div class="att-input-col">
+            <input type="text" class="form-control" style="font-size: 0.78rem; padding: 4px 8px;" placeholder="ชื่อ/คำอธิบาย เช่น รูปที่ 1 หรือ คู่มือ.pdf" value="${this.escapeHtml(att.name || '')}" oninput="window.app.updateAttachment(${idx}, 'name', this.value)">
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input type="text" class="form-control" style="font-size: 0.78rem; padding: 4px 8px;" placeholder="${placeholder}" value="${this.escapeHtml(att.url || '')}" oninput="window.app.updateAttachment(${idx}, 'url', this.value)">
+              ${att.type !== "youtube" ? `
+                <button type="button" class="btn-att-add" style="padding: 4px 8px; font-size: 0.7rem; white-space: nowrap;" onclick="document.getElementById('attFileInput_${idx}').click()" title="เลือกไฟล์จากอุปกรณ์">
+                  <i class="fa-solid fa-folder-open"></i> เลือกไฟล์
+                </button>
+                <input type="file" id="attFileInput_${idx}" accept="${att.type === 'image' ? 'image/*' : 'application/pdf'}" style="display: none;" onchange="window.app.handleAttachmentFileSelect(${idx}, this.files[0])">
+              ` : ''}
+            </div>
+            ${att.type === "image" && att.url ? `
+              <div style="margin-top: 4px;">
+                <img src="${att.url}" style="height: 40px; width: 60px; object-fit: cover; border: 1px solid var(--border-hairline); border-radius: 2px;">
+              </div>
+            ` : ''}
+          </div>
+          <div class="att-actions-col">
+            <button type="button" class="btn-att-ctrl" onclick="window.app.moveAttachment(${idx}, -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
+            <button type="button" class="btn-att-ctrl" onclick="window.app.moveAttachment(${idx}, 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
+            <button type="button" class="btn-att-ctrl del" onclick="window.app.removeAttachment(${idx})" title="ลบไฟล์แนบนี้"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  addAttachment(type) {
+    if (!this.currentEditingAttachments) this.currentEditingAttachments = [];
+    const newId = `att_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    let defaultName = "";
+    if (type === "image") defaultName = `รูปภาพประกอบ ${this.currentEditingAttachments.filter(a => a.type === "image").length + 1}`;
+    if (type === "pdf") defaultName = `เอกสารประกอบ.pdf`;
+    if (type === "youtube") defaultName = `วิดีโอสาธิต`;
+
+    this.currentEditingAttachments.push({
+      id: newId,
+      type: type,
+      name: defaultName,
+      url: ""
+    });
+    this.renderAttachmentRows();
+    this.playTacticalBeep(850, "sine", 0.04);
+  }
+
+  updateAttachment(index, field, value) {
+    if (this.currentEditingAttachments && this.currentEditingAttachments[index]) {
+      this.currentEditingAttachments[index][field] = value;
+    }
+  }
+
+  moveAttachment(index, direction) {
+    if (!this.currentEditingAttachments) return;
+    const target = index + direction;
+    if (target < 0 || target >= this.currentEditingAttachments.length) return;
+    const temp = this.currentEditingAttachments[index];
+    this.currentEditingAttachments[index] = this.currentEditingAttachments[target];
+    this.currentEditingAttachments[target] = temp;
+    this.renderAttachmentRows();
+  }
+
+  removeAttachment(index) {
+    if (!this.currentEditingAttachments) return;
+    this.currentEditingAttachments.splice(index, 1);
+    this.renderAttachmentRows();
+    this.playTacticalBeep(400, "sine", 0.04);
+  }
+
+  async handleAttachmentFileSelect(index, file) {
+    if (!file || !this.currentEditingAttachments || !this.currentEditingAttachments[index]) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.currentEditingAttachments[index].url = e.target.result;
+        if (!this.currentEditingAttachments[index].name || this.currentEditingAttachments[index].name.startsWith("รูปภาพ") || this.currentEditingAttachments[index].name.startsWith("เอกสาร")) {
+          this.currentEditingAttachments[index].name = file.name;
+        }
+        this.renderAttachmentRows();
+        this.playTacticalBeep(950, "sine", 0.05);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Failed to read attachment file:", err);
+      alert("ไม่สามารถอ่านไฟล์ได้ โปรดลองใหม่อีกครั้ง");
+    }
+  }
+
+  getHTMLAttachmentBuilderUI() {
+    return `
+      <div class="attachment-builder-box">
+        <div class="attachment-builder-head">
+          <label class="form-label" style="margin: 0; font-weight: 700;">
+            <i class="fa-solid fa-paperclip"></i> ไฟล์แนบ & สื่อประกอบ (เพิ่มได้มากกว่า 1)
+          </label>
+          <div class="attachment-add-btns">
+            <button type="button" class="btn-att-add" onclick="window.app.addAttachment('image')">
+              <i class="fa-solid fa-image" style="color: #64b5f6;"></i> + รูปภาพ
+            </button>
+            <button type="button" class="btn-att-add" onclick="window.app.addAttachment('pdf')">
+              <i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> + เอกสาร PDF
+            </button>
+            <button type="button" class="btn-att-add" onclick="window.app.addAttachment('youtube')">
+              <i class="fa-brands fa-youtube" style="color: #ff5252;"></i> + ลิงก์ YouTube
+            </button>
+          </div>
+        </div>
+        <div id="attachmentRowsContainer" class="attachment-rows-container"></div>
+      </div>
+    `;
+  }
+
+  // --- YouTube & Lightbox Modals ---
+  parseYouTubeVideoId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = String(url).match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  getYouTubeEmbedUrl(url) {
+    const id = this.parseYouTubeVideoId(url);
+    return id ? `https://www.youtube.com/embed/${id}` : url;
+  }
+
+  openGalleryModal(actIdOrList, startIndex = 0) {
+    let images = [];
+    if (typeof actIdOrList === "string") {
+      const act = this.data.activities.find(a => a.id === actIdOrList);
+      if (act) {
+        const atts = act.attachments || [];
+        images = atts.filter(a => a.type === "image" && a.url);
+        if (images.length === 0 && act.imageUrl) {
+          images = [{ id: 'main', type: 'image', name: act.title, url: act.imageUrl }];
+        }
+      }
+    } else if (Array.isArray(actIdOrList)) {
+      images = actIdOrList;
+    }
+
+    if (!images || images.length === 0) {
+      alert("ไม่มีรูปภาพในรายการนี้");
+      return;
+    }
+
+    this.activeGallery = {
+      images: images,
+      currentIndex: Math.max(0, Math.min(startIndex, images.length - 1))
+    };
+
+    this.renderGalleryModalContent();
+    this.playTacticalBeep(880, "sine", 0.05);
+  }
+
+  renderGalleryModalContent() {
+    if (!this.activeGallery || !this.activeGallery.images.length) return;
+    const { images, currentIndex } = this.activeGallery;
+    const curImg = images[currentIndex];
+
+    const contentHtml = `
+      <div class="gallery-viewer-frame">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-amber); font-weight: 700;">
+            <i class="fa-solid fa-camera"></i> ${this.escapeHtml(curImg.name || 'รูปภาพ')}
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+            [ ${currentIndex + 1} / ${images.length} ]
+          </div>
+        </div>
+
+        <img src="${curImg.url}" alt="${this.escapeHtml(curImg.name || '')}" class="gallery-main-img">
+
+        <div class="gallery-nav-bar">
+          <button type="button" class="btn-gallery-nav" onclick="window.app.stepGallery(-1)" ${images.length <= 1 ? 'disabled style="opacity:0.4;"' : ''}>
+            <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า (Prev)
+          </button>
+          <a href="${curImg.url}" target="_blank" download class="btn-dock" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-download"></i> ดาวน์โหลดรูปภาพ
+          </a>
+          <button type="button" class="btn-gallery-nav" onclick="window.app.stepGallery(1)" ${images.length <= 1 ? 'disabled style="opacity:0.4;"' : ''}>
+            ถัดไป (Next) <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    `;
+
+    this.openMediaModal(contentHtml);
+  }
+
+  stepGallery(direction) {
+    if (!this.activeGallery || !this.activeGallery.images.length) return;
+    const count = this.activeGallery.images.length;
+    this.activeGallery.currentIndex = (this.activeGallery.currentIndex + direction + count) % count;
+    this.renderGalleryModalContent();
+    this.playTacticalBeep(700, "sine", 0.03);
+  }
+
+  openPdfModal(rawUrl, rawTitle) {
+    const url = decodeURIComponent(rawUrl);
+    const title = decodeURIComponent(rawTitle || "เอกสาร PDF");
+    this.openMediaModal(`
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 90vw; max-width: 950px; height: 80vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
+          <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700;">
+            <i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> ${this.escapeHtml(title)}
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <a href="${url}" target="_blank" download class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-download"></i> ดาวน์โหลด PDF</a>
+            <a href="${url}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่</a>
+          </div>
+        </div>
+        <iframe src="${url}" style="width: 100%; height: 100%; border: 1px solid var(--border-hairline); background: #222;" title="${this.escapeHtml(title)}"></iframe>
+      </div>
+    `);
+    this.playTacticalBeep(880, "sine", 0.05);
+  }
+
+  openYouTubeModal(rawUrl, rawTitle) {
+    const url = decodeURIComponent(rawUrl);
+    const title = decodeURIComponent(rawTitle || "คลิปวิดีโอ YouTube");
+    const videoId = this.parseYouTubeVideoId(url);
+    const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+
+    this.openMediaModal(`
+      <div style="width: 90vw; max-width: 850px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
+          <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700;">
+            <i class="fa-brands fa-youtube" style="color: #ff5252;"></i> ${this.escapeHtml(title)}
+          </span>
+          <a href="${url}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดใน YouTube</a>
+        </div>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border: 1px solid var(--border-hairline);">
+          <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+      </div>
+    `);
+    this.playTacticalBeep(880, "sine", 0.05);
+  }
+
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
 

@@ -133,18 +133,49 @@
           </div>
         </div>
 
+        <!-- Right: Detailed Statement, Engineering Skills & Music Talent (Sortable) -->
         <div class="profile-content-pane">
-          <div class="academic-bio-box hud-reticle">
-            <h4><i class="fa-solid fa-graduation-cap"></i> ปรัชญาและเป้าหมายในวิชาชีพครูช่าง</h4>
+          <!-- 1. Academic Statement & Philosophy -->
+          <div class="academic-bio-box hud-reticle" data-pane-id="bio">
+            <div class="pane-card-head">
+              <h4><i class="fa-solid fa-graduation-cap"></i> ปรัชญาและเป้าหมายในวิชาชีพครูช่าง</h4>
+              <div class="pane-card-toolbar">
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('bio', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('bio', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
+                <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
+              </div>
+            </div>
             <p class="bio-statement" data-cms-key="profile.bioStatement">
               นักศึกษาหลักสูตรครุศาสตร์อุตสาหกรรมบัณฑิต สาขาวิชาครุศาสตร์อุตสาหกรรมไฟฟ้า มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น มีความมุ่งมั่นในการเรียนรู้ทั้งด้านวิศวกรรมไฟฟ้าเชิงปฏิบัติการ ระบบควบคุมอัตโนมัติในโรงงาน และศาสตร์การถ่ายทอดองค์ความรู้เพื่อผลิตบุคลากรช่างเทคนิคที่มีคุณภาพสู่ภาคอุตสาหกรรม
             </p>
           </div>
 
-          <div class="music-talent-box hud-reticle">
+          <!-- 2. Engineering Skills & Competencies -->
+          <div class="academic-bio-box hud-reticle" data-pane-id="skills">
+            <div class="pane-card-head">
+              <h4><i class="fa-solid fa-sliders"></i> ทักษะความเชี่ยวชาญทางวิศวกรรมไฟฟ้า & ควบคุม</h4>
+              <div class="pane-card-toolbar">
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('skills', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('skills', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
+                <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
+              </div>
+            </div>
+            <div id="skillsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            </div>
+          </div>
+
+          <!-- 3. ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส (Placed at bottom, sortable) -->
+          <div class="music-talent-box hud-reticle" data-pane-id="music">
             <div class="music-box-head">
-              <h4><i class="fa-solid fa-guitar"></i> ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส</h4>
-              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber);">INTERACTIVE SOUNDBOARD</span>
+              <div>
+                <h4><i class="fa-solid fa-guitar"></i> ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส</h4>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber);">INTERACTIVE SOUNDBOARD</span>
+              </div>
+              <div class="pane-card-toolbar">
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('music', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
+                <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('music', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
+                <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
+              </div>
             </div>
             <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.85rem;" data-cms-key="profile.specialSkills">
               มีความหลงใหลในเสียงดนตรี สามารถเล่นเครื่องดนตรีประเภทกีต้าร์โปร่ง กีต้าร์ไฟฟ้า และเบสไฟฟ้า ใช้ทักษะทางดนตรีในการฝึกฝนสมาธิ ความคิดสร้างสรรค์ และเสริมสร้างกิจกรรมนันทนาการร่วมกับผู้อื่น
@@ -167,17 +198,38 @@
               <canvas id="oscilloscopeCanvas" class="audio-oscilloscope-canvas"></canvas>
             </div>
           </div>
-
-          <div class="academic-bio-box hud-reticle">
-            <h4><i class="fa-solid fa-sliders"></i> ทักษะความเชี่ยวชาญทางวิศวกรรมไฟฟ้า & ควบคุม</h4>
-            <div id="skillsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            </div>
-          </div>
         </div>
       </div>
     </section>
 
-    <div class="hazard-stripes"></div>
+    <!-- Hazard Caution Stripe Divider & System Telemetry HUD Bar -->
+    <div class="hazard-stripes-telemetry-container">
+      <div class="hazard-stripes-flex"></div>
+      <div class="telemetry-corner-box hud-reticle">
+        <div class="hud-reticle-tr"></div>
+        <div class="hud-reticle-bl"></div>
+        <div class="telemetry-corner-row">
+          <span class="t-label">CLIP_ID:</span>
+          <span class="t-val">CLIP_0012</span>
+        </div>
+        <div class="telemetry-corner-row">
+          <span class="t-label">TIMECODE:</span>
+          <span class="t-val timecode-val">00:01:44:03</span>
+        </div>
+        <div class="telemetry-corner-row">
+          <span class="t-label">FORMAT:</span>
+          <span class="t-val">1080 / 24P</span>
+        </div>
+        <div class="telemetry-corner-row">
+          <span class="t-label">STANDARDS:</span>
+          <span class="t-val">IEC / EIT / TISI</span>
+        </div>
+        <div class="telemetry-corner-row">
+          <span class="t-label">DATABASE:</span>
+          <span class="t-val text-green secret-green-trigger" title="แตะข้อความสีเขียวนี้ 3 ครั้งเพื่อเข้าสู่ระบบ">INDEXED_DB + CLOUD</span>
+        </div>
+      </div>
+    </div>
 
     <footer class="tactical-footer">
       <div class="tactical-container">

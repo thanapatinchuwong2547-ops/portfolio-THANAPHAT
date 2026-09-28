@@ -1,4 +1,4 @@
-﻿// Data store for Thanaphat Inchuwong Portfolio
+// Data store for Thanaphat Inchuwong Portfolio
 // Auto-synced with localStorage, IndexedDB, and Supabase
 
 const DEFAULT_PORTFOLIO_DATA = {
@@ -29,6 +29,7 @@ const DEFAULT_PORTFOLIO_DATA = {
     heroWhiteTitle: "THANAPHAT INCHUWONG",
     heroSubtitle: "มุ่งมั่นพัฒนาวิชาชีพครูช่างอุตสาหกรรม ผสานศาสตร์วิศวกรรมไฟฟ้าสมัยใหม่และนวัตกรรมการจัดการเรียนรู้เชิงปฏิบัติการ",
     bioStatement: "นักศึกษาหลักสูตรครุศาสตร์อุตสาหกรรมบัณฑิต สาขาวิชาครุศาสตร์อุตสาหกรรมไฟฟ้า มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น มีความมุ่งมั่นในการเรียนรู้ทั้งด้านวิศวกรรมไฟฟ้าเชิงปฏิบัติการ ระบบควบคุมอัตโนมัติในโรงงาน และศาสตร์การถ่ายทอดองค์ความรู้เพื่อผลิตบุคลากรช่างเทคนิคที่มีคุณภาพสู่ภาคอุตสาหกรรม",
+    paneOrder: ["bio", "skills", "music"],
     socials: {
       github: "https://github.com/thanapatinchuwong2547-ops",
       email: "mailto:thanapatinchuwong2547@gmail.com",
@@ -143,14 +144,42 @@ const DEFAULT_PORTFOLIO_DATA = {
           type: "project",
           fileUrl: "",
           tags: ["PLC", "Automation", "Ladder Logic"],
-          summary: "ออกแบบวงจรฮาร์ดแวร์ เขียนโปรแกรมควบคุมสายพานลำเลียงและเซนเซอร์คัดแยกโลหะ-อโลหะ พร้อม HMI ทัชสกรีน"
+          summary: "ออกแบบวงจรฮาร์ดแวร์ เขียนโปรแกรมควบคุมสายพานลำเลียงและเซนเซอร์คัดแยกโลหะ-อโลหะ พร้อม HMI ทัชสกรีน",
+          attachments: [
+            {
+              id: "att_c1_1",
+              type: "image",
+              name: "ภาพวงจรควบคุมและการต่อสายไฟตู้คอนโทรล",
+              url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+              id: "att_c1_2",
+              type: "pdf",
+              name: "เอกสารแบบแปลน Ladder Diagram & Wiring Spec.pdf",
+              url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            },
+            {
+              id: "att_c1_3",
+              type: "youtube",
+              name: "วิดีโอสาธิตการทำงานของสายพานคัดแยกวัสดุ",
+              url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            }
+          ]
         },
         {
           name: "ใบรายงานผลการทดลองการสื่อสาร Modbus RTU / TCP",
           type: "report",
           fileUrl: "",
           tags: ["SCADA", "Modbus", "Industrial IoT"],
-          summary: "เอกสารรายงานการทดสอบการเชื่อมต่อสื่อสารระหว่าง PLC และคอมพิวเตอร์ควบคุมศูนย์กลาง"
+          summary: "เอกสารรายงานการทดสอบการเชื่อมต่อสื่อสารระหว่าง PLC และคอมพิวเตอร์ควบคุมศูนย์กลาง",
+          attachments: [
+            {
+              id: "att_c1_4",
+              type: "pdf",
+              name: "รายงานผลการทดลอง Modbus RTU/TCP.pdf",
+              url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            }
+          ]
         }
       ]
     },
@@ -169,7 +198,15 @@ const DEFAULT_PORTFOLIO_DATA = {
           type: "cad",
           fileUrl: "",
           tags: ["AutoCAD", "Single Line Diagram", "Load Schedule"],
-          summary: "เขียนแบบ Single Line Diagram, ตารางคำนวณโหลด (Load Schedule) และตำแหน่งติดตั้งตู้ MDB/DB"
+          summary: "เขียนแบบ Single Line Diagram, ตารางคำนวณโหลด (Load Schedule) และตำแหน่งติดตั้งตู้ MDB/DB",
+          attachments: [
+            {
+              id: "att_c2_1",
+              type: "pdf",
+              name: "Single Line Diagram & Load Schedule Plan.pdf",
+              url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            }
+          ]
         }
       ]
     },
@@ -229,9 +266,35 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "มกราคม 2568",
       place: "ศูนย์แข่งขันทักษะวิชาชีพ อาชีวศึกษาภาคตะวันออกเฉียงเหนือ",
       badge: "AWARDS & HONORS",
-      imageUrl: "",
+      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
       summary: "ตัวแทนสถานศึกษาเข้าร่วมการแข่งขันทักษะการควบคุมระบบอัตโนมัติด้วย PLC และระบบนิวแมติกส์ สามารถควบคุมการทำงานได้ตามเงื่อนไขอย่างถูกต้องแม่นยำ",
-      certificateUrl: ""
+      certificateUrl: "",
+      attachments: [
+        {
+          id: "att_act1_1",
+          type: "image",
+          name: "ภาพการต่อวงจรและเขียนโปรแกรมควบคุม PLC S7-1200",
+          url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          id: "att_act1_2",
+          type: "image",
+          name: "ภาพบรรยากาศการแข่งขันและการทดสอบระบบอัตโนมัติ",
+          url: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          id: "att_act1_3",
+          type: "pdf",
+          name: "สูจิบัตรและเกียรติบัตรการแข่งขันทักษะวิชาชีพ.pdf",
+          url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        },
+        {
+          id: "att_act1_4",
+          type: "youtube",
+          name: "วิดีโอสาธิตการทำงานของชุดควบคุมอัตโนมัติ",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+      ]
     },
     {
       id: "act-2",
@@ -241,9 +304,23 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "ตุลาคม 2567",
       place: "มทร.อีสาน วิทยาเขตขอนแก่น",
       badge: "CERTIFICATION",
-      imageUrl: "",
+      imageUrl: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
       summary: "เข้ารับการอบรมมาตรฐานการติดตั้ง Solar Rooftop, การคำนวณขนาด Inverter และการปฏิบัติตามมาตรฐานการไฟฟ้า MEA/PEA",
-      certificateUrl: ""
+      certificateUrl: "",
+      attachments: [
+        {
+          id: "att_act2_1",
+          type: "image",
+          name: "การฝึกปฏิบัติวัดค่ากำลังไฟฟ้าแผงโซลาร์เซลล์",
+          url: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          id: "att_act2_2",
+          type: "pdf",
+          name: "คู่มือมาตรฐานการติดตั้งระบบ Solar Rooftop.pdf",
+          url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        }
+      ]
     },
     {
       id: "act-3",
@@ -253,9 +330,17 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "พฤศจิกายน 2567",
       place: "โรงเรียนในพื้นที่ชนบท จังหวัดขอนแก่น",
       badge: "COMMUNITY SERVICE",
-      imageUrl: "",
+      imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80",
       summary: "นำทีมลงพื้นที่ปรับปรุงระบบแสงสว่าง ซ่อมบำรุงตู้ควบคุมไฟฟ้า และติดตั้งอุปกรณ์ป้องกันไฟฟ้ารั่ว (RCD) เพื่อความปลอดภัยของเด็กนักเรียน",
-      certificateUrl: ""
+      certificateUrl: "",
+      attachments: [
+        {
+          id: "att_act3_1",
+          type: "image",
+          name: "การตรวจเช็กและซ่อมบำรุงตู้ควบคุมไฟฟ้า",
+          url: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80"
+        }
+      ]
     },
     {
       id: "act-4",
@@ -265,9 +350,23 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "ธันวาคม 2567",
       place: "หอประชุม มทร.อีสาน วิทยาเขตขอนแก่น",
       badge: "EXTRACURRICULAR",
-      imageUrl: "",
+      imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
       summary: "ทำหน้าที่มือกีต้าร์และมือเบสประจำวงดนตรีนักศึกษาคณะครุศาสตร์อุตสาหกรรม สร้างความบันเทิงและเสริมสร้างความสามัคคีในสถาบัน",
-      certificateUrl: ""
+      certificateUrl: "",
+      attachments: [
+        {
+          id: "att_act4_1",
+          type: "image",
+          name: "ภาพการแสดงดนตรีสดบนเวที",
+          url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          id: "att_act4_2",
+          type: "youtube",
+          name: "คลิปบันทึกการแสดงสดดนตรีสากล",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+      ]
     }
   ],
 

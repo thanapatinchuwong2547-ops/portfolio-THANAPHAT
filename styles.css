@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Tactical Industrial HUD Portfolio - Thanaphat Inchuwong (นายธนภัทร อินทร์ชูวงศ์)
    Inspired by Tactical Instrumentation & Viewfinder Control Desks
    Electrical Industrial Education // มทร.อีสาน วิทยาเขตขอนแก่น
@@ -1688,6 +1688,436 @@ body.editable-active [data-cms-key] {
 }
 
 .btn-back-home:hover {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+/* ==========================================================================
+   Telemetry Corner Box (from media_1790583691257 & Screenshot)
+   ========================================================================== */
+.hazard-stripes-telemetry-container {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  max-width: var(--container-width);
+  margin: 1.5rem auto 3rem auto;
+  padding: 0 1.5rem;
+}
+
+.hazard-stripes-flex {
+  flex-grow: 1;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.08) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+  border: 1px solid var(--border-hairline);
+  min-height: 90px;
+}
+
+[data-theme="light"] .hazard-stripes-flex {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.06),
+    rgba(0, 0, 0, 0.06) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+}
+
+.telemetry-corner-box {
+  background: #0b0c10;
+  border: 1px solid rgba(224, 90, 43, 0.35);
+  padding: 0.85rem 1.25rem;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.telemetry-corner-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.telemetry-corner-row .t-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.telemetry-corner-row .t-val {
+  color: var(--accent-amber);
+  font-weight: 600;
+}
+
+.telemetry-corner-row .t-val.text-green,
+.secret-green-trigger {
+  color: #00ff9d !important;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.4);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.secret-green-trigger:hover {
+  background: rgba(0, 255, 157, 0.15);
+  text-shadow: 0 0 12px rgba(0, 255, 157, 0.8);
+}
+
+.secret-trigger-pulse {
+  animation: green-pulse-click 0.3s ease;
+}
+
+@keyframes green-pulse-click {
+  0% { transform: scale(1); background: transparent; }
+  50% { transform: scale(1.1); background: rgba(0, 255, 157, 0.4); }
+  100% { transform: scale(1); background: transparent; }
+}
+
+@media (max-width: 768px) {
+  .hazard-stripes-telemetry-container {
+    flex-direction: column;
+  }
+  .hazard-stripes-flex {
+    min-height: 40px;
+  }
+}
+
+/* ==========================================================================
+   Profile Content Pane Reordering & Drag & Drop
+   ========================================================================== */
+.profile-content-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.academic-bio-box,
+.music-talent-box {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.pane-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pane-card-head h4 {
+  margin-bottom: 0 !important;
+}
+
+.pane-card-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-hairline);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.btn-pane-reorder {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.btn-pane-reorder:hover {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+  background: var(--accent-dim);
+}
+
+.pane-drag-handle {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: grab;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.pane-drag-handle:active {
+  cursor: grabbing;
+}
+
+.pane-dragging {
+  opacity: 0.5;
+  border-style: dashed !important;
+  border-color: var(--accent-primary) !important;
+}
+
+.pane-drag-over {
+  border-color: var(--accent-amber) !important;
+  box-shadow: 0 0 15px var(--accent-glow) !important;
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Attachments Builder & Multi-Media Badges
+   ========================================================================== */
+.attachment-builder-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  padding: 12px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-builder-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: 8px;
+}
+
+.attachment-add-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-att-add {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.btn-att-add:hover {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+.attachment-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.attachment-row-item {
+  background: var(--bg-chassis);
+  border: 1px solid var(--border-hairline);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  border-radius: 3px;
+}
+
+.att-type-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.att-type-tag.tag-image {
+  background: rgba(33, 150, 243, 0.2);
+  color: #64b5f6;
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+.att-type-tag.tag-pdf {
+  background: rgba(239, 83, 80, 0.2);
+  color: #ef5350;
+  border: 1px solid rgba(239, 83, 80, 0.4);
+}
+
+.att-type-tag.tag-youtube {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff5252;
+  border: 1px solid rgba(255, 0, 0, 0.4);
+}
+
+.att-input-col {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.att-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-att-ctrl {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.68rem;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.btn-att-ctrl:hover {
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  border-color: var(--border-hairline);
+}
+
+.btn-att-ctrl.del:hover {
+  color: var(--signal-rec);
+  border-color: var(--signal-rec);
+  background: rgba(235, 87, 87, 0.1);
+}
+
+/* Multi-Media Chips on Cards */
+.media-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0.6rem 0;
+}
+
+.media-chip {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.media-chip:hover {
+  transform: translateY(-1px);
+  color: var(--text-primary);
+}
+
+.media-chip.chip-gallery {
+  border-color: rgba(33, 150, 243, 0.5);
+  color: #64b5f6;
+}
+.media-chip.chip-gallery:hover {
+  background: rgba(33, 150, 243, 0.15);
+}
+
+.media-chip.chip-pdf {
+  border-color: rgba(239, 83, 80, 0.5);
+  color: #ef5350;
+}
+.media-chip.chip-pdf:hover {
+  background: rgba(239, 83, 80, 0.15);
+}
+
+.media-chip.chip-youtube {
+  border-color: rgba(255, 0, 0, 0.5);
+  color: #ff5252;
+}
+.media-chip.chip-youtube:hover {
+  background: rgba(255, 0, 0, 0.15);
+}
+
+/* Lightbox Gallery Modal */
+.gallery-viewer-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+}
+
+.gallery-main-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.gallery-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0 1rem;
+}
+
+.btn-gallery-nav {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  padding: 6px 16px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-gallery-nav:hover {
   background: var(--accent-primary);
   color: #fff;
   border-color: var(--accent-primary);
