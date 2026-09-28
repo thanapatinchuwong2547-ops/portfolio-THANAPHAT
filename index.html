@@ -156,9 +156,19 @@
     </section>
 
 
-    <!-- Hazard Caution Stripe Divider & System Telemetry HUD Bar (from Screenshot & Media Reference) -->
     <div class="hazard-stripes-telemetry-container">
-      <div class="hazard-stripes-flex"></div>
+      <div class="hazard-zone-left" id="hazardZoneLeft">
+        <div class="quick-cards-admin-header admin-only-flex" id="quickCardsAdminHeader" style="justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: rgba(224, 90, 43, 0.08); border: 1px dashed rgba(224, 90, 43, 0.35);">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber); font-weight: 700;">
+            <i class="fa-solid fa-sliders"></i> TACTICAL CARDS ZONE
+          </span>
+          <button type="button" class="btn-dock" style="margin: 0; padding: 4px 10px; font-size: 0.75rem;" onclick="window.app.openQuickCardModal()">
+            <i class="fa-solid fa-plus"></i> เพิ่มการ์ดใหม่
+          </button>
+        </div>
+        <div class="quick-cards-wrapper" id="quickCardsContainer"></div>
+        <div class="hazard-stripes-empty" id="hazardStripesFallback" style="display: none;"></div>
+      </div>
       <div class="telemetry-corner-box hud-reticle" id="hudTelemetryBox">
         <div class="hud-reticle-tr"></div>
         <div class="hud-reticle-bl"></div>
@@ -533,6 +543,9 @@
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('items')">
         <i class="fa-solid fa-plus"></i> เพิ่มรายวิชา/ผลงาน
+      </button>
+      <button class="btn-dock" onclick="window.app.openQuickCardModal()">
+        <i class="fa-solid fa-id-card"></i> จัดการการ์ด
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('supabase')">
         <i class="fa-solid fa-database"></i> Supabase Cloud

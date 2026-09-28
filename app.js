@@ -405,6 +405,7 @@ class PortfolioApp {
 
   renderAll() {
     this.renderProfile();
+    this.renderQuickCards();
     this.renderDashboardGrid();
     this.renderSkills();
     this.renderEducation();
@@ -534,6 +535,307 @@ class PortfolioApp {
       `;
       container.appendChild(node);
     });
+  }
+
+  // --- Tactical Quick Cards Manager (Hazard Zone) ---
+  renderQuickCards() {
+    const container = document.getElementById("quickCardsContainer");
+    const fallback = document.getElementById("hazardStripesFallback");
+    if (!container) return;
+
+    if (!Array.isArray(this.data.quickCards)) {
+      this.data.quickCards = (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.quickCards)
+        ? JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.quickCards))
+        : [];
+    }
+
+    const cards = this.data.quickCards;
+    const isAdmin = document.body.classList.contains("admin-mode");
+
+    if (cards.length === 0 && !isAdmin) {
+      container.style.display = "none";
+      if (fallback) fallback.style.display = "block";
+      return;
+    }
+
+    container.style.display = "grid";
+    if (fallback) fallback.style.display = "none";
+
+    let html = "";
+    cards.forEach((card, idx) => {
+      const id = card.id || `qc_${idx}`;
+      const badge = card.badge ? this.escapeHtml(card.badge) : "SPEC";
+      const icon = card.icon || "fa-bolt";
+      const title = card.title ? this.escapeHtml(card.title) : "";
+      const metric = card.metric ? this.escapeHtml(card.metric) : "";
+      const metricLabel = card.metricLabel ? this.escapeHtml(card.metricLabel) : "";
+      const desc = card.description ? this.escapeHtml(card.description) : "";
+      const btnText = card.buttonText ? this.escapeHtml(card.buttonText) : "";
+      const btnUrl = card.buttonUrl || "";
+      const imageUrl = card.imageUrl || "";
+
+      html += `
+        <div class="quick-card hud-reticle" id="card_${id}">
+          <div class="quick-card-header">
+            <div class="quick-card-badge-row">
+              <span class="quick-card-badge">[${badge}]</span>
+              ${title ? `<h4 class="quick-card-title">${title}</h4>` : ""}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid ${icon} quick-card-icon"></i>
+              <div class="quick-card-admin-bar">
+                <button type="button" class="btn-card-ctrl" onclick="window.app.moveQuickCard(${idx}, -1)" title="เลื่อนซ้าย" ${idx === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button type="button" class="btn-card-ctrl" onclick="window.app.moveQuickCard(${idx}, 1)" title="เลื่อนขวา" ${idx === cards.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button type="button" class="btn-card-ctrl" onclick="window.app.openQuickCardModal('${id}')" title="แก้ไขการ์ดนี้">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button type="button" class="btn-card-ctrl btn-danger" onclick="window.app.deleteQuickCard('${id}')" title="ลบการ์ดนี้">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          ${(metric || metricLabel) ? `
+            <div class="quick-card-metric-box">
+              ${metric ? `<div class="quick-card-metric-val">${metric}</div>` : ""}
+              ${metricLabel ? `<div class="quick-card-metric-lbl">${metricLabel}</div>` : ""}
+            </div>
+          ` : ""}
+
+          ${imageUrl ? `
+            <div class="quick-card-media-preview" onclick="window.app.openMediaModal('<img src=&quot;${imageUrl}&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" title="คลิกเพื่อดูภาพขยาย">
+              <img src="${imageUrl}" alt="${title}" class="quick-card-media-img">
+            </div>
+          ` : ""}
+
+          ${desc ? `<p class="quick-card-desc">${desc}</p>` : ""}
+
+          ${(btnText && btnUrl) ? `
+            <div class="quick-card-footer">
+              <a href="${btnUrl}" class="quick-card-action-btn">
+                <span>${btnText}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    });
+
+    if (isAdmin) {
+      html += `
+        <button type="button" class="btn-add-quick-card hud-reticle" onclick="window.app.openQuickCardModal()" title="เพิ่มการ์ดใหม่ในแถบนี้">
+          <i class="fa-solid fa-plus" style="font-size: 1.5rem;"></i>
+          <span>+ เพิ่มการ์ดใหม่</span>
+        </button>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  openQuickCardModal(cardId = null) {
+    if (!this.checkAdminOrPrompt("จัดการการ์ด")) return;
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    if (!Array.isArray(this.data.quickCards)) {
+      this.data.quickCards = (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.quickCards)
+        ? JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.quickCards))
+        : [];
+    }
+
+    const card = cardId ? (this.data.quickCards.find(c => c.id === cardId) || {}) : {};
+    const isEdit = Boolean(card && card.id);
+
+    title.innerHTML = `<i class="fa-solid fa-id-card"></i> ${isEdit ? "แก้ไขการ์ดอเนกประสงค์" : "เพิ่มการ์ดใหม่ (QUICK CARD)"}`;
+    body.innerHTML = `
+      <form id="quickCardForm" onsubmit="event.preventDefault(); window.app.saveQuickCard('${card.id || ''}');" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ป้ายกำกับ (Badge Code)</label>
+            <input type="text" id="qcInputBadge" class="tactical-input" value="${this.escapeHtml(card.badge || 'CORE SPEC')}" placeholder="เช่น CORE SPEC, HIGHLIGHT" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ไอคอน (FontAwesome Class)</label>
+            <div style="display: flex; gap: 6px;">
+              <select class="tactical-input" style="width: 60%;" onchange="document.getElementById('qcInputIcon').value = this.value;">
+                <option value="fa-bolt" ${(!card.icon || card.icon === 'fa-bolt') ? 'selected' : ''}>⚡ fa-bolt (ไฟฟ้า/พลังงาน)</option>
+                <option value="fa-microchip" ${card.icon === 'fa-microchip' ? 'selected' : ''}>🔲 fa-microchip (ชิป/บอร์ด)</option>
+                <option value="fa-gear" ${card.icon === 'fa-gear' ? 'selected' : ''}>⚙️ fa-gear (ระบบกลไก)</option>
+                <option value="fa-chalkboard-user" ${card.icon === 'fa-chalkboard-user' ? 'selected' : ''}>👨‍🏫 fa-chalkboard-user (การสอน)</option>
+                <option value="fa-graduation-cap" ${card.icon === 'fa-graduation-cap' ? 'selected' : ''}>🎓 fa-graduation-cap (การศึกษา)</option>
+                <option value="fa-chart-line" ${card.icon === 'fa-chart-line' ? 'selected' : ''}>📈 fa-chart-line (สถิติ/ผลงาน)</option>
+                <option value="fa-laptop-code" ${card.icon === 'fa-laptop-code' ? 'selected' : ''}>💻 fa-laptop-code (โปรแกรม)</option>
+                <option value="fa-shield-halved" ${card.icon === 'fa-shield-halved' ? 'selected' : ''}>🛡️ fa-shield-halved (ความปลอดภัย)</option>
+                <option value="fa-award" ${card.icon === 'fa-award' ? 'selected' : ''}>🏆 fa-award (รางวัล)</option>
+              </select>
+              <input type="text" id="qcInputIcon" class="tactical-input" value="${this.escapeHtml(card.icon || 'fa-bolt')}" placeholder="เช่น fa-bolt" style="width: 40%;">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">หัวข้อการ์ด (Card Title)</label>
+          <input type="text" id="qcInputTitle" class="tactical-input" value="${this.escapeHtml(card.title || '')}" placeholder="เช่น INDUSTRIAL AUTOMATION" style="width: 100%;" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ตัวเลข/คำย่อสถิติ (Stat Metric)</label>
+            <input type="text" id="qcInputMetric" class="tactical-input" value="${this.escapeHtml(card.metric || '')}" placeholder="เช่น PLC / VFD, 40+, 3.78" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">คำอธิบายสถิติ (Metric Label)</label>
+            <input type="text" id="qcInputMetricLabel" class="tactical-input" value="${this.escapeHtml(card.metricLabel || '')}" placeholder="เช่น CONTROL SYSTEMS, WORKS" style="width: 100%;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">รายละเอียดเนื้อหา (Description)</label>
+          <textarea id="qcInputDesc" class="tactical-input" rows="3" placeholder="ระบุข้อความอธิบายความสามารถ หรือข้อมูลสำคัญ..." style="width: 100%;">${this.escapeHtml(card.description || '')}</textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ข้อความบนปุ่มกด (Button Text)</label>
+            <input type="text" id="qcInputBtnText" class="tactical-input" value="${this.escapeHtml(card.buttonText || '')}" placeholder="เช่น สำรวจรายวิชา (เว้นว่างได้)" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">ลิงก์ปลายทาง (Button URL)</label>
+            <input type="text" id="qcInputBtnUrl" class="tactical-input" value="${this.escapeHtml(card.buttonUrl || '')}" placeholder="เช่น courses.html, activities.html" style="width: 100%;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">รูปภาพประกอบ (Image URL / Upload)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="qcInputImageUrl" class="tactical-input" value="${this.escapeHtml(card.imageUrl || '')}" placeholder="ใส่ URL รูปภาพ หรือกดปุ่มเลือกไฟล์ด้านขวา" style="flex: 1;">
+            <label class="btn-dock" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; margin: 0;">
+              <i class="fa-solid fa-folder-open"></i> เลือกรูป
+              <input type="file" accept="image/*" style="display: none;" onchange="window.app.handleQuickCardImageUpload(event)">
+            </label>
+          </div>
+          <img id="qcImagePreview" src="${card.imageUrl || ''}" style="max-height: 120px; border: 1px solid var(--border-hairline); margin-top: 8px; object-fit: cover; border-radius: 3px; display: ${card.imageUrl ? 'block' : 'none'};">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-hairline); padding-top: 14px;">
+          <button type="button" class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">ยกเลิก</button>
+          <button type="submit" class="btn-tactical"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลการ์ด</button>
+        </div>
+      </form>
+    `;
+
+    modal.classList.add("open");
+  }
+
+  handleQuickCardImageUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const input = document.getElementById("qcInputImageUrl");
+      const preview = document.getElementById("qcImagePreview");
+      if (input) input.value = evt.target.result;
+      if (preview) {
+        preview.src = evt.target.result;
+        preview.style.display = "block";
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  saveQuickCard(cardId) {
+    if (!this.checkAdminOrPrompt("บันทึกการ์ด")) return;
+    const badge = (document.getElementById("qcInputBadge").value || "").trim() || "SPEC";
+    const icon = (document.getElementById("qcInputIcon").value || "").trim() || "fa-bolt";
+    const title = (document.getElementById("qcInputTitle").value || "").trim();
+    const metric = (document.getElementById("qcInputMetric").value || "").trim();
+    const metricLabel = (document.getElementById("qcInputMetricLabel").value || "").trim();
+    const description = (document.getElementById("qcInputDesc").value || "").trim();
+    const buttonText = (document.getElementById("qcInputBtnText").value || "").trim();
+    const buttonUrl = (document.getElementById("qcInputBtnUrl").value || "").trim();
+    const imageUrl = (document.getElementById("qcInputImageUrl").value || "").trim();
+
+    if (!title && !metric && !description) {
+      alert("กรุณากรอกหัวข้อ หรือสถิติ หรือรายละเอียดอย่างน้อยหนึ่งอย่าง");
+      return;
+    }
+
+    if (!Array.isArray(this.data.quickCards)) {
+      this.data.quickCards = [];
+    }
+
+    if (cardId) {
+      const idx = this.data.quickCards.findIndex(c => c.id === cardId);
+      if (idx !== -1) {
+        this.data.quickCards[idx] = {
+          ...this.data.quickCards[idx],
+          badge,
+          icon,
+          title,
+          metric,
+          metricLabel,
+          description,
+          buttonText,
+          buttonUrl,
+          imageUrl
+        };
+      }
+    } else {
+      const newCard = {
+        id: "qc_" + Date.now(),
+        badge,
+        icon,
+        title,
+        metric,
+        metricLabel,
+        description,
+        buttonText,
+        buttonUrl,
+        imageUrl
+      };
+      this.data.quickCards.push(newCard);
+    }
+
+    this.saveData();
+    this.renderQuickCards();
+    this.closeCMSModal();
+    this.playTacticalBeep(880, "sine", 0.15);
+  }
+
+  deleteQuickCard(cardId) {
+    if (!this.checkAdminOrPrompt("ลบการ์ด")) return;
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบการ์ดใบนี้?")) return;
+
+    if (!Array.isArray(this.data.quickCards)) return;
+    this.data.quickCards = this.data.quickCards.filter(c => c.id !== cardId);
+
+    this.saveData();
+    this.renderQuickCards();
+    this.playTacticalBeep(320, "sawtooth", 0.15);
+  }
+
+  moveQuickCard(index, direction) {
+    if (!this.checkAdminOrPrompt("จัดเรียงการ์ด")) return;
+    if (!Array.isArray(this.data.quickCards)) return;
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= this.data.quickCards.length) return;
+
+    const temp = this.data.quickCards[index];
+    this.data.quickCards[index] = this.data.quickCards[targetIdx];
+    this.data.quickCards[targetIdx] = temp;
+
+    this.saveData();
+    this.renderQuickCards();
+    this.playTacticalBeep(640, "triangle", 0.08);
   }
 
   // --- Modular 4-Panel Dashboard Grid & CMS Manager ---
@@ -1763,9 +2065,11 @@ class PortfolioApp {
   }
 
   activateAdminMode() {
+    sessionStorage.setItem(this.authKey, "authenticated");
     document.body.classList.add("admin-mode");
     const dock = document.getElementById("adminDock");
     if (dock) dock.style.display = "flex";
+    this.renderQuickCards();
     this.renderDashboardGrid();
     this.renderCourses(this.currentCourseFilter || "all");
     this.renderActivities(this.currentActivityFilter || "all");
@@ -1778,6 +2082,7 @@ class PortfolioApp {
     this.isEditing = false;
     const dock = document.getElementById("adminDock");
     if (dock) dock.style.display = "none";
+    this.renderQuickCards();
     this.renderDashboardGrid();
     this.renderCourses(this.currentCourseFilter || "all");
     this.renderActivities(this.currentActivityFilter || "all");

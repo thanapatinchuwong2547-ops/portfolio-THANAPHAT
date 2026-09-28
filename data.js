@@ -100,6 +100,48 @@ const DEFAULT_PORTFOLIO_DATA = {
     }
   },
 
+  quickCards: [
+    {
+      id: "qc_01",
+      badge: "CORE SPEC",
+      icon: "fa-bolt",
+      title: "INDUSTRIAL AUTOMATION",
+      metric: "PLC / VFD",
+      metricLabel: "CONTROL SYSTEMS",
+      description: "เชี่ยวชาญการออกแบบวงจร Relay Ladder, การโปรแกรม PLC และระบบขับเคลื่อนมอเตอร์ไฟฟ้า",
+      buttonText: "สำรวจรายวิชา",
+      buttonUrl: "courses.html",
+      imageUrl: "",
+      videoUrl: ""
+    },
+    {
+      id: "qc_02",
+      badge: "EXPERIENCE",
+      icon: "fa-chalkboard-user",
+      title: "VOCATIONAL PEDAGOGY",
+      metric: "4-STEP",
+      metricLabel: "TEACHING METHOD",
+      description: "การสอนภาคปฏิบัติงานช่างไฟฟ้า เน้นความปลอดภัยตามมาตรฐาน EIT/IEC และเทคนิค Four-Step Method",
+      buttonText: "ประวัติการศึกษา",
+      buttonUrl: "education.html",
+      imageUrl: "",
+      videoUrl: ""
+    },
+    {
+      id: "qc_03",
+      badge: "PROJECT METRICS",
+      icon: "fa-microchip",
+      title: "FIELD & LAB WORKS",
+      metric: "40+",
+      metricLabel: "WORKS & CASES",
+      description: "โครงงานติดตั้งระบบไฟฟ้า ตู้ควบคุม MDB และกิจกรรมจิตอาสาบริการวิชาชีพสู่ชุมชน",
+      buttonText: "ชมผลงานและกิจกรรม",
+      buttonUrl: "activities.html",
+      imageUrl: "",
+      videoUrl: ""
+    }
+  ],
+
   skills: [
     { category: "วิศวกรรมไฟฟ้า & ควบคุม (Electrical & Control)", items: [
       { name: "PLC Programming (Siemens / Omron / Mitsubishi)", level: 90 },
