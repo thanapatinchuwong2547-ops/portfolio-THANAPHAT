@@ -387,7 +387,7 @@
             <div class="academic-bio-box hud-reticle" data-pane-id="bio">
               <div class="pane-card-head">
                 <h4><i class="fa-solid fa-graduation-cap"></i> ปรัชญาและเป้าหมายในวิชาชีพครูช่าง</h4>
-                <div class="pane-card-toolbar">
+                <div class="pane-card-toolbar admin-only">
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('bio', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('bio', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
                   <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -402,7 +402,7 @@
             <div class="academic-bio-box hud-reticle" data-pane-id="skills">
               <div class="pane-card-head">
                 <h4><i class="fa-solid fa-sliders"></i> ทักษะความเชี่ยวชาญทางวิศวกรรมไฟฟ้า & ควบคุม</h4>
-                <div class="pane-card-toolbar">
+                <div class="pane-card-toolbar admin-only">
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('skills', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('skills', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
                   <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -419,7 +419,7 @@
                   <h4><i class="fa-solid fa-guitar"></i> ความสามารถพิเศษ: เล่นดนตรี กีต้าร์ และเบส</h4>
                   <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber);">INTERACTIVE SOUNDBOARD</span>
                 </div>
-                <div class="pane-card-toolbar">
+                <div class="pane-card-toolbar admin-only">
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('music', -1)" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up"></i></button>
                   <button type="button" class="btn-pane-reorder" onclick="window.app.moveProfileCard('music', 1)" title="เลื่อนลง"><i class="fa-solid fa-chevron-down"></i></button>
                   <span class="pane-drag-handle" title="ลากเพื่อย้ายตำแหน่ง"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -504,7 +504,7 @@
           <button class="filter-btn" onclick="window.app.filterCourses('power')">วิศวกรรมไฟฟ้ากำลัง (POWER)</button>
           <button class="filter-btn" onclick="window.app.filterCourses('pedagogy')">ครุศาสตร์อุตสาหกรรม (PEDAGOGY)</button>
           <button class="filter-btn" onclick="window.app.filterCourses('circuit')">วงจรไฟฟ้า (CIRCUITS)</button>
-          <button class="btn-dock" style="background: var(--accent-primary); color: #fff; font-weight: 700; margin-left: auto;" onclick="window.app.promptAddCourse()">
+          <button class="btn-dock admin-only" style="background: var(--accent-primary); color: #fff; font-weight: 700; margin-left: auto;" onclick="window.app.promptAddCourse()">
             <i class="fa-solid fa-plus"></i> เพิ่มรายวิชาใหม่
           </button>
         </div>
@@ -540,7 +540,7 @@
           <button class="filter-btn" onclick="window.app.filterActivities('training')">การฝึกอบรม (TRAININGS)</button>
           <button class="filter-btn" onclick="window.app.filterActivities('community')">บริการวิชาชีพสู่สังคม (COMMUNITY)</button>
           <button class="filter-btn" onclick="window.app.filterActivities('music')">ดนตรีและกิจกรรม (MUSIC)</button>
-          <button class="btn-dock" style="background: var(--accent-primary); color: #fff; font-weight: 700; margin-left: auto;" onclick="window.app.promptAddActivity()">
+          <button class="btn-dock admin-only" style="background: var(--accent-primary); color: #fff; font-weight: 700; margin-left: auto;" onclick="window.app.promptAddActivity()">
             <i class="fa-solid fa-plus"></i> เพิ่มผลงาน/กิจกรรมใหม่
           </button>
         </div>
