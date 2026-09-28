@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body class="theme-coffee">
 
@@ -158,13 +158,18 @@
 
     <div class="hazard-stripes-telemetry-container">
       <div class="hazard-zone-left" id="hazardZoneLeft">
-        <div class="quick-cards-admin-header admin-only-flex" id="quickCardsAdminHeader" style="justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: rgba(224, 90, 43, 0.08); border: 1px dashed rgba(224, 90, 43, 0.35);">
+        <div class="quick-cards-admin-header admin-only-flex" id="quickCardsAdminHeader" style="width: 100%; box-sizing: border-box; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: rgba(224, 90, 43, 0.08); border: 1px dashed rgba(224, 90, 43, 0.35);">
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-amber); font-weight: 700;">
             <i class="fa-solid fa-sliders"></i> TACTICAL CARDS ZONE
           </span>
-          <button type="button" class="btn-dock" style="margin: 0; padding: 4px 10px; font-size: 0.75rem;" onclick="window.app.openQuickCardModal()">
-            <i class="fa-solid fa-plus"></i> เพิ่มการ์ดใหม่
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-dock" style="margin: 0; padding: 4px 10px; font-size: 0.75rem;" onclick="window.app.resetDefaultQuickCards()" title="คืนค่าการ์ดมาตรฐาน 3 ใบ">
+              <i class="fa-solid fa-rotate-left"></i> คืนค่าเริ่มต้น
+            </button>
+            <button type="button" class="btn-dock" style="margin: 0; padding: 4px 10px; font-size: 0.75rem; background: var(--accent-primary); color: #000; font-weight: 700;" onclick="window.app.openQuickCardModal()" title="เพิ่มการ์ดใหม่">
+              <i class="fa-solid fa-plus"></i> เพิ่มการ์ดใหม่
+            </button>
+          </div>
         </div>
         <div class="quick-cards-wrapper" id="quickCardsContainer"></div>
         <div class="hazard-stripes-empty" id="hazardStripesFallback" style="display: none;"></div>
@@ -587,8 +592,8 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
-  <script src="db.js"></script>
-  <script src="app.js"></script>
+  <script src="data.js?v=2.2"></script>
+  <script src="db.js?v=2.2"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>

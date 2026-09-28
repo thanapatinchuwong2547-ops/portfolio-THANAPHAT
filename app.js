@@ -4,6 +4,48 @@
  * RMUTI Khon Kaen Campus // Electrical Industrial Education
  */
 
+const DEFAULT_QUICK_CARDS = [
+  {
+    id: "qc_01",
+    badge: "CORE SPEC",
+    icon: "fa-bolt",
+    title: "INDUSTRIAL AUTOMATION",
+    metric: "PLC / VFD",
+    metricLabel: "CONTROL SYSTEMS",
+    description: "เชี่ยวชาญการออกแบบวงจร Relay Ladder, การโปรแกรม PLC และระบบขับเคลื่อนมอเตอร์ไฟฟ้า",
+    buttonText: "สำรวจรายวิชา",
+    buttonUrl: "courses.html",
+    imageUrl: "",
+    videoUrl: ""
+  },
+  {
+    id: "qc_02",
+    badge: "EXPERIENCE",
+    icon: "fa-chalkboard-user",
+    title: "VOCATIONAL PEDAGOGY",
+    metric: "4-STEP",
+    metricLabel: "TEACHING METHOD",
+    description: "การสอนภาคปฏิบัติงานช่างไฟฟ้า เน้นความปลอดภัยตามมาตรฐาน EIT/IEC และเทคนิค Four-Step Method",
+    buttonText: "ประวัติการศึกษา",
+    buttonUrl: "education.html",
+    imageUrl: "",
+    videoUrl: ""
+  },
+  {
+    id: "qc_03",
+    badge: "PROJECT METRICS",
+    icon: "fa-microchip",
+    title: "FIELD & LAB WORKS",
+    metric: "40+",
+    metricLabel: "WORKS & CASES",
+    description: "โครงงานติดตั้งระบบไฟฟ้า ตู้ควบคุม MDB และกิจกรรมจิตอาสาบริการวิชาชีพสู่ชุมชน",
+    buttonText: "ชมผลงานและกิจกรรม",
+    buttonUrl: "activities.html",
+    imageUrl: "",
+    videoUrl: ""
+  }
+];
+
 class PortfolioApp {
   constructor() {
     this.storageKey = "thanaphat_portfolio_data_v1";
@@ -18,6 +60,10 @@ class PortfolioApp {
 
   // Load from localStorage or fallback to default
   loadData() {
+    const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+      ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+      : DEFAULT_QUICK_CARDS;
+
     try {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
@@ -25,14 +71,17 @@ class PortfolioApp {
         const merged = {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
-          profile: { ...window.DEFAULT_PORTFOLIO_DATA.profile, ...(parsed.profile || {}) },
-          siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(parsed.siteSettings || {}) },
+          profile: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.profile), ...(parsed.profile || {}) },
+          siteSettings: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.siteSettings), ...(parsed.siteSettings || {}) },
           dashboard: {
-            panel1: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel1, ...((parsed.dashboard && parsed.dashboard.panel1) || {}) },
-            panel2: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel2, ...((parsed.dashboard && parsed.dashboard.panel2) || {}) },
-            panel3: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3, ...((parsed.dashboard && parsed.dashboard.panel3) || {}) },
-            panel4: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4, ...((parsed.dashboard && parsed.dashboard.panel4) || {}) }
-          }
+            panel1: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel1), ...((parsed.dashboard && parsed.dashboard.panel1) || {}) },
+            panel2: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel2), ...((parsed.dashboard && parsed.dashboard.panel2) || {}) },
+            panel3: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3), ...((parsed.dashboard && parsed.dashboard.panel3) || {}) },
+            panel4: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4), ...((parsed.dashboard && parsed.dashboard.panel4) || {}) }
+          },
+          quickCards: (Array.isArray(parsed.quickCards) && parsed.quickCards.length > 0)
+            ? parsed.quickCards
+            : JSON.parse(JSON.stringify(defaultQuickCards))
         };
         if (!merged.profile.heroWhiteTitle || merged.profile.heroTitle.includes("\n") || merged.profile.heroTitle === "ENGINEERING POWER.") {
           merged.profile.heroTitle = "WELCOME TO PORTFOLIO";
@@ -43,7 +92,11 @@ class PortfolioApp {
     } catch (e) {
       console.warn("Could not parse saved portfolio data, using defaults:", e);
     }
-    return JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA));
+    const fallback = JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA || {}));
+    if (!Array.isArray(fallback.quickCards) || fallback.quickCards.length === 0) {
+      fallback.quickCards = JSON.parse(JSON.stringify(DEFAULT_QUICK_CARDS));
+    }
+    return fallback;
   }
 
   saveData() {
@@ -543,10 +596,12 @@ class PortfolioApp {
     const fallback = document.getElementById("hazardStripesFallback");
     if (!container) return;
 
-    if (!Array.isArray(this.data.quickCards)) {
-      this.data.quickCards = (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.quickCards)
-        ? JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.quickCards))
-        : [];
+    if (!Array.isArray(this.data.quickCards) || this.data.quickCards.length === 0) {
+      const defaultCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+        ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+        : DEFAULT_QUICK_CARDS;
+      this.data.quickCards = JSON.parse(JSON.stringify(defaultCards));
+      this.saveData();
     }
 
     const cards = this.data.quickCards;
@@ -646,10 +701,11 @@ class PortfolioApp {
     const body = document.getElementById("cmsModalBody");
     if (!modal || !body) return;
 
-    if (!Array.isArray(this.data.quickCards)) {
-      this.data.quickCards = (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.quickCards)
-        ? JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.quickCards))
-        : [];
+    if (!Array.isArray(this.data.quickCards) || this.data.quickCards.length === 0) {
+      const defaultCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+        ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+        : DEFAULT_QUICK_CARDS;
+      this.data.quickCards = JSON.parse(JSON.stringify(defaultCards));
     }
 
     const card = cardId ? (this.data.quickCards.find(c => c.id === cardId) || {}) : {};
@@ -836,6 +892,20 @@ class PortfolioApp {
     this.saveData();
     this.renderQuickCards();
     this.playTacticalBeep(640, "triangle", 0.08);
+  }
+
+  resetDefaultQuickCards() {
+    if (!this.checkAdminOrPrompt("รีเซ็ตการ์ดเริ่มต้น")) return;
+    if (confirm("ยืนยันการคืนค่าการ์ดเริ่มต้นทั้งหมด (3 ใบมาตรฐาน)?\n(การ์ดที่เพิ่มหรือแก้ไขไว้จะถูกแทนที่ด้วยชุดมาตรฐาน)")) {
+      const defaultCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+        ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+        : DEFAULT_QUICK_CARDS;
+      this.data.quickCards = JSON.parse(JSON.stringify(defaultCards));
+      this.saveData();
+      this.renderQuickCards();
+      this.playTacticalBeep(920, "triangle", 0.12);
+      alert("คืนค่าการ์ดเริ่มต้น 3 ใบมาตรฐานเรียบร้อยแล้ว!");
+    }
   }
 
   // --- Modular 4-Panel Dashboard Grid & CMS Manager ---
@@ -1441,7 +1511,10 @@ class PortfolioApp {
   }
 
   checkAdminOrPrompt(actionName = "ดำเนินการ") {
-    if (sessionStorage.getItem(this.authKey) === "authenticated") {
+    if (sessionStorage.getItem(this.authKey) === "authenticated" || document.body.classList.contains("admin-mode")) {
+      if (!sessionStorage.getItem(this.authKey)) {
+        sessionStorage.setItem(this.authKey, "authenticated");
+      }
       return true;
     }
     this.openLoginModal();
@@ -2523,11 +2596,18 @@ class PortfolioApp {
         const localUpdated = new Date(this.data.lastUpdated || 0).getTime();
         if (remoteUpdated >= localUpdated) {
           console.log("[Supabase] Synced latest portfolio data from Cloud");
+          const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+            ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+            : DEFAULT_QUICK_CARDS;
+
           this.data = {
             ...window.DEFAULT_PORTFOLIO_DATA,
             ...data.payload,
-            profile: { ...window.DEFAULT_PORTFOLIO_DATA.profile, ...(data.payload.profile || {}) },
-            siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(data.payload.siteSettings || {}) }
+            profile: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.profile), ...(data.payload.profile || {}) },
+            siteSettings: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.siteSettings), ...(data.payload.siteSettings || {}) },
+            quickCards: (Array.isArray(data.payload.quickCards) && data.payload.quickCards.length > 0)
+              ? data.payload.quickCards
+              : (Array.isArray(this.data.quickCards) && this.data.quickCards.length > 0 ? this.data.quickCards : JSON.parse(JSON.stringify(defaultQuickCards)))
           };
           localStorage.setItem(this.storageKey, JSON.stringify(this.data));
           this.renderAll();
@@ -3264,4 +3344,6 @@ class PortfolioApp {
 
 document.addEventListener("DOMContentLoaded", () => {
   window.app = new PortfolioApp();
+  window.openQuickCardModal = (id) => window.app?.openQuickCardModal(id);
+  window.resetDefaultQuickCards = () => window.app?.resetDefaultQuickCards();
 });
