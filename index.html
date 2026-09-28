@@ -157,7 +157,7 @@
 
     <!-- Modular 4-Panel Dashboard Grid (from Screenshot 2026-09-27) -->
     <section class="tactical-container">
-      <div class="modular-dashboard-grid">
+      <div class="modular-dashboard-grid" id="modularDashboardGrid">
         <!-- Panel 1: System Highlights (Accordion) -->
         <div class="dash-panel hud-reticle">
           <div class="panel-header">
@@ -646,6 +646,9 @@
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('items')">
         <i class="fa-solid fa-plus"></i> เพิ่มรายวิชา/ผลงาน
+      </button>
+      <button class="btn-dock" onclick="window.app.openDashboardManagerModal()">
+        <i class="fa-solid fa-table-columns"></i> 4-Panel Dashboard
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('supabase')">
         <i class="fa-solid fa-database"></i> Supabase Cloud

@@ -38,6 +38,68 @@ const DEFAULT_PORTFOLIO_DATA = {
     }
   },
 
+  dashboard: {
+    panel1: {
+      title: "SYSTEM HIGHLIGHTS",
+      code: "[SPEC_01]",
+      specs: [
+        {
+          title: "INDUSTRIAL AUTOMATION & PLC",
+          content: "เชี่ยวชาญการเขียนโปรแกรมควบคุม PLC (Siemens / Omron), Relay Ladder Logic, การเชื่อมต่อระบบนิวแมติกส์และเซนเซอร์ตรวจจับอัตโนมัติ"
+        },
+        {
+          title: "POWER SYSTEM & ESTIMATION",
+          content: "การออกแบบระบบไฟฟ้าโรงงานอุตสาหกรรม การคำนวณโหลด หม้อแปลงไฟฟ้า ระบบกราวด์ และการเขียนแบบแปลน Single Line Diagram ตามมาตรฐาน วสท./IEC"
+        },
+        {
+          title: "VOCATIONAL PEDAGOGY",
+          content: "การวิเคราะห์หลักสูตรช่างเทคนิค การออกแบบแผนการจัดการเรียนรู้ 4 ขั้นตอน (Four-Step Method) และการสร้างชุดฝึกปฏิบัติการไฟฟ้าเพื่อความปลอดภัย"
+        },
+        {
+          title: "EMBEDDED & MOTOR DRIVE",
+          content: "การควบคุมมอเตอร์ไฟฟ้ากระแสสลับ อินเวอร์เตอร์ VFD และการประยุกต์ใช้งานไมโครคอนโทรลเลอร์ IoT สำหรับมอนิเตอร์พลังงานไฟฟ้า"
+        }
+      ]
+    },
+    panel2: {
+      title: "IN THE FIELD",
+      code: "[FEED_02]",
+      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      captionTag: "LAB WORKSHOP:",
+      captionText: "ปฏิบัติการติดตั้งระบบควบคุมมอเตอร์ไฟฟ้าและตรวจวัดคุณภาพสัญญาณไฟฟ้า ณ มทร.อีสาน ขอนแก่น"
+    },
+    panel3: {
+      title: "FIELD NOTES",
+      code: "[LOGS_03]",
+      notes: [
+        {
+          text: "การทดสอบระบบควบคุมสายพานคัดแยกวัสดุด้วย PLC S7-1200 และ HMI หน้าจอทัชสกรีน",
+          index: "INDEX 03:12",
+          link: "courses.html"
+        },
+        {
+          text: "การลงพื้นที่บริการวิชาชาชีพ ตรวจเช็กระบบไฟฟ้าและตู้ MDB ชุมชนชนบท ขอนแก่น",
+          index: "INDEX 02:48",
+          link: "activities.html"
+        },
+        {
+          text: "การออกแบบบทเรียนสื่อผสมสำหรับการสอนวิชาเครื่องมือวัดทางไฟฟ้าสำหรับนักศึกษาช่าง",
+          index: "INDEX 01:15",
+          link: "courses.html"
+        }
+      ]
+    },
+    panel4: {
+      title: "SYSTEM OVERVIEW",
+      code: "[CAD_04]",
+      mode: "canvas",
+      imageUrl: "",
+      badgeLeft: "SLD: 400V/230V 50Hz",
+      badgeRight: "DWG: SCHEMATIC_REV2"
+    }
+  },
+
   skills: [
     { category: "วิศวกรรมไฟฟ้า & ควบคุม (Electrical & Control)", items: [
       { name: "PLC Programming (Siemens / Omron / Mitsubishi)", level: 90 },

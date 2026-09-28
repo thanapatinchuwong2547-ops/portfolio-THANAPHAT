@@ -26,7 +26,13 @@ class PortfolioApp {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
           profile: { ...window.DEFAULT_PORTFOLIO_DATA.profile, ...(parsed.profile || {}) },
-          siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(parsed.siteSettings || {}) }
+          siteSettings: { ...window.DEFAULT_PORTFOLIO_DATA.siteSettings, ...(parsed.siteSettings || {}) },
+          dashboard: {
+            panel1: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel1, ...((parsed.dashboard && parsed.dashboard.panel1) || {}) },
+            panel2: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel2, ...((parsed.dashboard && parsed.dashboard.panel2) || {}) },
+            panel3: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3, ...((parsed.dashboard && parsed.dashboard.panel3) || {}) },
+            panel4: { ...window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4, ...((parsed.dashboard && parsed.dashboard.panel4) || {}) }
+          }
         };
         if (!merged.profile.heroWhiteTitle || merged.profile.heroTitle.includes("\n") || merged.profile.heroTitle === "ENGINEERING POWER.") {
           merged.profile.heroTitle = "WELCOME TO PORTFOLIO";
@@ -399,6 +405,7 @@ class PortfolioApp {
 
   renderAll() {
     this.renderProfile();
+    this.renderDashboardGrid();
     this.renderSkills();
     this.renderEducation();
     this.renderCourses(this.currentCourseFilter || "all");
@@ -527,6 +534,600 @@ class PortfolioApp {
       `;
       container.appendChild(node);
     });
+  }
+
+  // --- Modular 4-Panel Dashboard Grid & CMS Manager ---
+  renderDashboardGrid() {
+    const grid = document.getElementById("modularDashboardGrid");
+    if (!grid) return;
+
+    const d = this.data.dashboard || window.DEFAULT_PORTFOLIO_DATA.dashboard;
+    const p1 = d.panel1 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel1;
+    const p2 = d.panel2 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel2;
+    const p3 = d.panel3 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3;
+    const p4 = d.panel4 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4;
+
+    grid.innerHTML = `
+      <!-- Panel 1: System Highlights (Accordion) -->
+      <div class="dash-panel hud-reticle" id="dashPanel1">
+        <div class="panel-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="panel-title">${this.escapeHtml(p1.title || "SYSTEM HIGHLIGHTS")}</div>
+            <button type="button" class="btn-dock admin-only panel-edit-btn" onclick="window.app.editDashboardPanel(1)" title="แก้ไขข้อมูล SPEC_01">
+              <i class="fa-solid fa-pen"></i> แก้ไข
+            </button>
+          </div>
+          <div class="panel-code">${this.escapeHtml(p1.code || "[SPEC_01]")}</div>
+        </div>
+        <div class="specs-accordion" id="systemHighlightsAccordion">
+          ${(p1.specs || []).map((spec, idx) => `
+            <div class="spec-item ${idx === 0 ? 'open' : ''}">
+              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
+                <span>${this.escapeHtml(spec.title)}</span>
+                <span class="toggle-icon">${idx === 0 ? '-' : '+'}</span>
+              </div>
+              <div class="spec-content">
+                ${this.escapeHtml(spec.content)}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Panel 2: In The Field (Video / Media Preview) -->
+      <div class="dash-panel hud-reticle" id="dashPanel2">
+        <div class="panel-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="panel-title">${this.escapeHtml(p2.title || "IN THE FIELD")}</div>
+            <button type="button" class="btn-dock admin-only panel-edit-btn" onclick="window.app.editDashboardPanel(2)" title="แก้ไขข้อมูล FEED_02">
+              <i class="fa-solid fa-pen"></i> แก้ไข
+            </button>
+          </div>
+          <div class="panel-code">${this.escapeHtml(p2.code || "[FEED_02]")}</div>
+        </div>
+        <div class="field-media-frame" id="fieldMediaPreviewBox">
+          <img src="${p2.imageUrl || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80'}" alt="${this.escapeHtml(p2.captionTag || 'IN THE FIELD')}" class="field-media-img" id="fieldMediaImg">
+          <button class="play-overlay-btn" id="playFieldMediaBtn" onclick="window.app.playFieldVideo()" title="ชมวิดีโอสาธิตการปฏิบัติงาน">
+            <i class="fa-solid fa-play"></i>
+          </button>
+        </div>
+        <div class="field-caption">
+          <strong>${this.escapeHtml(p2.captionTag || "LAB WORKSHOP:")}</strong> ${this.escapeHtml(p2.captionText || "")}
+        </div>
+      </div>
+
+      <!-- Panel 3: Field Notes (Logs & Case Studies) -->
+      <div class="dash-panel hud-reticle" id="dashPanel3">
+        <div class="panel-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="panel-title">${this.escapeHtml(p3.title || "FIELD NOTES")}</div>
+            <button type="button" class="btn-dock admin-only panel-edit-btn" onclick="window.app.editDashboardPanel(3)" title="แก้ไขข้อมูล LOGS_03">
+              <i class="fa-solid fa-pen"></i> แก้ไข
+            </button>
+          </div>
+          <div class="panel-code">${this.escapeHtml(p3.code || "[LOGS_03]")}</div>
+        </div>
+        <div class="field-notes-list">
+          ${(p3.notes || []).map((note) => `
+            <div class="note-entry">
+              <div class="note-text">${this.escapeHtml(note.text)}</div>
+              <div class="note-meta">
+                <span>${this.escapeHtml(note.index || "INDEX 01:00")}</span>
+                <a href="${note.link || '#'}" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Panel 4: System Overview (CAD / Blueprint Wireframe) -->
+      <div class="dash-panel hud-reticle" id="dashPanel4">
+        <div class="panel-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="panel-title">${this.escapeHtml(p4.title || "SYSTEM OVERVIEW")}</div>
+            <button type="button" class="btn-dock admin-only panel-edit-btn" onclick="window.app.editDashboardPanel(4)" title="แก้ไขข้อมูล CAD_04">
+              <i class="fa-solid fa-pen"></i> แก้ไข
+            </button>
+          </div>
+          <div class="panel-code">${this.escapeHtml(p4.code || "[CAD_04]")}</div>
+        </div>
+        <div class="cad-blueprint-frame">
+          ${p4.mode === 'image' && p4.imageUrl ? `
+            <img src="${p4.imageUrl}" alt="CAD Schematic Diagram" class="cad-custom-img" onclick="window.app.openMediaModal('<img src=&quot;${p4.imageUrl}&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" style="cursor: pointer; width: 100%; height: 100%; object-fit: contain;" title="คลิกเพื่อดูภาพวงจรขนาดใหญ่">
+          ` : `
+            <canvas id="cadBlueprintCanvas" class="blueprint-canvas"></canvas>
+          `}
+        </div>
+        <div class="cad-badge">
+          <span>${this.escapeHtml(p4.badgeLeft || "SLD: 400V/230V 50Hz")}</span>
+          <span>${this.escapeHtml(p4.badgeRight || "DWG: SCHEMATIC_REV2")}</span>
+        </div>
+      </div>
+    `;
+
+    if (!p4.mode || p4.mode === 'canvas' || !p4.imageUrl) {
+      setTimeout(() => this.renderCadBlueprint(), 40);
+    }
+  }
+
+  playFieldVideo() {
+    const d = this.data.dashboard || window.DEFAULT_PORTFOLIO_DATA.dashboard;
+    const p2 = (d && d.panel2) || {};
+    const videoUrl = p2.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    this.openYouTubeModal(videoUrl, p2.captionTag ? `${p2.captionTag} ${p2.captionText || ''}` : "วิดีโอสาธิตการปฏิบัติงาน");
+  }
+
+  openDashboardManagerModal() {
+    if (!this.checkAdminOrPrompt("จัดการ Dashboard")) return;
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    title.innerHTML = `<i class="fa-solid fa-table-columns"></i> จัดการ MODULAR 4-PANEL DASHBOARD`;
+    body.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+          เลือก Panel ที่ต้องการแก้ไขเนื้อหา รูปภาพ วิดีโอ หรือแบบแปลน CAD:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
+          <button class="btn-quick-upload" style="padding: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;" onclick="window.app.editDashboardPanel(1)">
+            <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700;">[SPEC_01]</span>
+            <span style="font-weight: 700; font-size: 0.9rem;">1. SYSTEM HIGHLIGHTS</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">แก้ไขหัวข้อ และรายละเอียด Accordion สเปกวิศวกรรม</span>
+          </button>
+
+          <button class="btn-quick-upload" style="padding: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;" onclick="window.app.editDashboardPanel(2)">
+            <span style="font-family: var(--font-mono); color: #64b5f6; font-weight: 700;">[FEED_02]</span>
+            <span style="font-weight: 700; font-size: 0.9rem;">2. IN THE FIELD</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">เปลี่ยนภาพหน้างาน ลิงก์วิดีโอ YouTube และคำอธิบาย</span>
+          </button>
+
+          <button class="btn-quick-upload" style="padding: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;" onclick="window.app.editDashboardPanel(3)">
+            <span style="font-family: var(--font-mono); color: #81c784; font-weight: 700;">[LOGS_03]</span>
+            <span style="font-weight: 700; font-size: 0.9rem;">3. FIELD NOTES</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">แก้ไขบันทึกเหตุการณ์ รหัส INDEX และลิงก์ปลายทาง</span>
+          </button>
+
+          <button class="btn-quick-upload" style="padding: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;" onclick="window.app.editDashboardPanel(4)">
+            <span style="font-family: var(--font-mono); color: #ffb74d; font-weight: 700;">[CAD_04]</span>
+            <span style="font-weight: 700; font-size: 0.9rem;">4. SYSTEM OVERVIEW</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">เลือก Blueprint Canvas หรืออัปโหลดภาพแบบแปลน CAD</span>
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+          <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    `;
+    modal.classList.add("open");
+  }
+
+  editDashboardPanel(num) {
+    if (!this.checkAdminOrPrompt(`แก้ไข Dashboard Panel ${num}`)) return;
+    const modal = document.getElementById("cmsStudioModal");
+    const title = document.getElementById("cmsModalTitle");
+    const body = document.getElementById("cmsModalBody");
+    if (!modal || !body) return;
+
+    if (!this.data.dashboard) {
+      this.data.dashboard = JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.dashboard));
+    }
+    const d = this.data.dashboard;
+
+    if (num === 1) {
+      const p1 = d.panel1 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel1;
+      this.currentEditingSpecs = JSON.parse(JSON.stringify(p1.specs || []));
+
+      title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไข PANEL 1: SYSTEM HIGHLIGHTS [SPEC_01]`;
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">PANEL TITLE</label>
+              <input type="text" id="p1TitleInput" class="form-control" value="${this.escapeHtml(p1.title || 'SYSTEM HIGHLIGHTS')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SECTION CODE</label>
+              <input type="text" id="p1CodeInput" class="form-control" value="${this.escapeHtml(p1.code || '[SPEC_01]')}">
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 6px;">
+            <label class="form-label" style="margin: 0; color: var(--accent-amber);"><i class="fa-solid fa-list-check"></i> รายการสเปกและทักษะย่อย (Accordion Specs)</label>
+            <button type="button" class="btn-att-add" onclick="window.app.addSpecItemToPanel1Editor()">
+              <i class="fa-solid fa-plus"></i> เพิ่มหัวข้อย่อย
+            </button>
+          </div>
+
+          <div id="p1SpecsEditorContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;">
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-tactical btn-tactical-primary" onclick="window.app.saveDashboardPanel(1)">
+              <i class="fa-solid fa-check"></i> บันทึก Panel 1
+            </button>
+            <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      `;
+      this.renderPanel1SpecsEditor();
+      modal.classList.add("open");
+    } else if (num === 2) {
+      const p2 = d.panel2 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel2;
+      title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไข PANEL 2: IN THE FIELD [FEED_02]`;
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">PANEL TITLE</label>
+              <input type="text" id="p2TitleInput" class="form-control" value="${this.escapeHtml(p2.title || 'IN THE FIELD')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SECTION CODE</label>
+              <input type="text" id="p2CodeInput" class="form-control" value="${this.escapeHtml(p2.code || '[FEED_02]')}">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">รูปภาพหน้างาน (COVER IMAGE)</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="p2ImageUrlInput" class="form-control" value="${this.escapeHtml(p2.imageUrl || '')}" placeholder="URL รูปภาพ หรือกดเลือกไฟล์">
+              <button type="button" class="btn-att-add" style="white-space: nowrap;" onclick="document.getElementById('p2FileUploader').click()">
+                <i class="fa-solid fa-folder-open"></i> เลือกรูปจากเครื่อง
+              </button>
+              <input type="file" id="p2FileUploader" accept="image/*" style="display: none;" onchange="window.app.handlePanel2ImageUpload(this.files[0])">
+            </div>
+            <div id="p2ImagePreviewBox" style="margin-top: 6px;">
+              ${p2.imageUrl ? `<img src="${p2.imageUrl}" style="max-height: 90px; border: 1px solid var(--border-hairline); border-radius: 4px;">` : ''}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ลิงก์วิดีโอ YouTube (YOUTUBE VIDEO LINK)</label>
+            <input type="text" id="p2VideoUrlInput" class="form-control" value="${this.escapeHtml(p2.videoUrl || '')}" placeholder="เช่น https://www.youtube.com/watch?v=... หรือ https://youtu.be/...">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">
+              เมื่อกดปุ่ม Play สีส้ม วิดีโอนี้จะเล่นในป็อปอัป Modal ทันที
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ป้ายกำกับคำอธิบาย (CAPTION PREFIX)</label>
+            <input type="text" id="p2CaptionTagInput" class="form-control" value="${this.escapeHtml(p2.captionTag || 'LAB WORKSHOP:')}" placeholder="เช่น LAB WORKSHOP: หรือ SITE INSPECTION:">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ข้อความคำอธิบาย (CAPTION DESCRIPTION)</label>
+            <textarea id="p2CaptionTextInput" class="form-control" rows="2">${this.escapeHtml(p2.captionText || '')}</textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-tactical btn-tactical-primary" onclick="window.app.saveDashboardPanel(2)">
+              <i class="fa-solid fa-check"></i> บันทึก Panel 2
+            </button>
+            <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.add("open");
+    } else if (num === 3) {
+      const p3 = d.panel3 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3;
+      this.currentEditingNotes = JSON.parse(JSON.stringify(p3.notes || []));
+
+      title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไข PANEL 3: FIELD NOTES [LOGS_03]`;
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">PANEL TITLE</label>
+              <input type="text" id="p3TitleInput" class="form-control" value="${this.escapeHtml(p3.title || 'FIELD NOTES')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SECTION CODE</label>
+              <input type="text" id="p3CodeInput" class="form-control" value="${this.escapeHtml(p3.code || '[LOGS_03]')}">
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 6px;">
+            <label class="form-label" style="margin: 0; color: #81c784;"><i class="fa-solid fa-clipboard-list"></i> รายการบันทึก (Field Log Entries)</label>
+            <button type="button" class="btn-att-add" onclick="window.app.addNoteItemToPanel3Editor()">
+              <i class="fa-solid fa-plus"></i> เพิ่มบันทึกใหม่
+            </button>
+          </div>
+
+          <div id="p3NotesEditorContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;">
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-tactical btn-tactical-primary" onclick="window.app.saveDashboardPanel(3)">
+              <i class="fa-solid fa-check"></i> บันทึก Panel 3
+            </button>
+            <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      `;
+      this.renderPanel3NotesEditor();
+      modal.classList.add("open");
+    } else if (num === 4) {
+      const p4 = d.panel4 || window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4;
+      title.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> แก้ไข PANEL 4: SYSTEM OVERVIEW [CAD_04]`;
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">PANEL TITLE</label>
+              <input type="text" id="p4TitleInput" class="form-control" value="${this.escapeHtml(p4.title || 'SYSTEM OVERVIEW')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SECTION CODE</label>
+              <input type="text" id="p4CodeInput" class="form-control" value="${this.escapeHtml(p4.code || '[CAD_04]')}">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">รูปแบบการแสดงผล (DISPLAY MODE)</label>
+            <select id="p4ModeSelect" class="form-control" onchange="window.app.toggleCadModeView(this.value)">
+              <option value="canvas" ${(!p4.mode || p4.mode === 'canvas') ? 'selected' : ''}>1. Animated CAD Blueprint Canvas (เส้นไดอะแกรมไซเบอร์อัตโนมัติ)</option>
+              <option value="image" ${p4.mode === 'image' ? 'selected' : ''}>2. Custom Schematic / CAD Image (อัปโหลดรูปภาพแบบแปลนจริงจากเครื่อง)</option>
+            </select>
+          </div>
+
+          <div id="p4ImageGroup" class="form-group" style="${p4.mode === 'image' ? '' : 'display: none;'}">
+            <label class="form-label">ไฟล์ภาพแบบแปลน CAD / วงจร SLD</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="p4ImageUrlInput" class="form-control" value="${this.escapeHtml(p4.imageUrl || '')}" placeholder="URL รูปภาพแบบแปลน หรือกดเลือกไฟล์">
+              <button type="button" class="btn-att-add" style="white-space: nowrap;" onclick="document.getElementById('p4CadFileUploader').click()">
+                <i class="fa-solid fa-folder-open"></i> เลือกไฟล์แบบแปลน
+              </button>
+              <input type="file" id="p4CadFileUploader" accept="image/*" style="display: none;" onchange="window.app.handleCadImageUpload(this.files[0])">
+            </div>
+            <div id="p4CadPreviewBox" style="margin-top: 6px;">
+              ${p4.imageUrl ? `<img src="${p4.imageUrl}" style="max-height: 100px; border: 1px solid var(--border-hairline); border-radius: 4px;">` : ''}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">ป้ายสถานะซ้าย (SLD BADGE)</label>
+              <input type="text" id="p4BadgeLeftInput" class="form-control" value="${this.escapeHtml(p4.badgeLeft || 'SLD: 400V/230V 50Hz')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ป้ายสถานะขวา (DWG REV)</label>
+              <input type="text" id="p4BadgeRightInput" class="form-control" value="${this.escapeHtml(p4.badgeRight || 'DWG: SCHEMATIC_REV2')}">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-tactical btn-tactical-primary" onclick="window.app.saveDashboardPanel(4)">
+              <i class="fa-solid fa-check"></i> บันทึก Panel 4
+            </button>
+            <button class="btn-tactical btn-tactical-ghost" onclick="window.app.closeCMSModal()">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.add("open");
+    }
+  }
+
+  toggleCadModeView(val) {
+    const box = document.getElementById("p4ImageGroup");
+    if (box) box.style.display = val === "image" ? "block" : "none";
+  }
+
+  handlePanel2ImageUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const inp = document.getElementById("p2ImageUrlInput");
+      if (inp) inp.value = e.target.result;
+      const preview = document.getElementById("p2ImagePreviewBox");
+      if (preview) {
+        preview.innerHTML = `<img src="${e.target.result}" style="max-height: 90px; border: 1px solid var(--border-hairline); border-radius: 4px;">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  handleCadImageUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const inp = document.getElementById("p4ImageUrlInput");
+      if (inp) inp.value = e.target.result;
+      const preview = document.getElementById("p4CadPreviewBox");
+      if (preview) {
+        preview.innerHTML = `<img src="${e.target.result}" style="max-height: 100px; border: 1px solid var(--border-hairline); border-radius: 4px;">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  renderPanel1SpecsEditor() {
+    const container = document.getElementById("p1SpecsEditorContainer");
+    if (!container) return;
+    const list = this.currentEditingSpecs || [];
+
+    if (list.length === 0) {
+      container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">ยังไม่มีหัวข้อ — คลิกปุ่มด้านบนเพื่อเพิ่ม</div>`;
+      return;
+    }
+
+    container.innerHTML = list.map((spec, idx) => `
+      <div style="background: var(--bg-chassis); border: 1px solid var(--border-hairline); padding: 8px 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+          <input type="text" class="form-control" style="font-size: 0.8rem; font-weight: 700;" value="${this.escapeHtml(spec.title)}" placeholder="ชื่อหัวข้อ เช่น INDUSTRIAL AUTOMATION" oninput="window.app.updateSpecItem(${idx}, 'title', this.value)">
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="btn-thumb-arrow" style="position: static;" onclick="window.app.moveSpecItem(${idx}, -1)" title="เลื่อนขึ้น">▲</button>
+            <button type="button" class="btn-thumb-arrow" style="position: static;" onclick="window.app.moveSpecItem(${idx}, 1)" title="เลื่อนลง">▼</button>
+            <button type="button" class="btn-doc-del" onclick="window.app.removeSpecItemFromPanel1Editor(${idx})" title="ลบหัวข้อนี้">✕</button>
+          </div>
+        </div>
+        <textarea class="form-control" rows="2" style="font-size: 0.78rem;" placeholder="คำอธิบายรายละเอียด..." oninput="window.app.updateSpecItem(${idx}, 'content', this.value)">${this.escapeHtml(spec.content || '')}</textarea>
+      </div>
+    `).join('');
+  }
+
+  updateSpecItem(idx, field, val) {
+    if (this.currentEditingSpecs && this.currentEditingSpecs[idx]) {
+      this.currentEditingSpecs[idx][field] = val;
+    }
+  }
+
+  addSpecItemToPanel1Editor() {
+    if (!this.currentEditingSpecs) this.currentEditingSpecs = [];
+    this.currentEditingSpecs.push({
+      title: `NEW TECHNICAL SPECIFICATION`,
+      content: "รายละเอียดทักษะความเชี่ยวชาญทางวิศวกรรม"
+    });
+    this.renderPanel1SpecsEditor();
+  }
+
+  moveSpecItem(idx, dir) {
+    if (!this.currentEditingSpecs) return;
+    const tgt = idx + dir;
+    if (tgt < 0 || tgt >= this.currentEditingSpecs.length) return;
+    const tmp = this.currentEditingSpecs[idx];
+    this.currentEditingSpecs[idx] = this.currentEditingSpecs[tgt];
+    this.currentEditingSpecs[tgt] = tmp;
+    this.renderPanel1SpecsEditor();
+  }
+
+  removeSpecItemFromPanel1Editor(idx) {
+    if (!this.currentEditingSpecs) return;
+    this.currentEditingSpecs.splice(idx, 1);
+    this.renderPanel1SpecsEditor();
+  }
+
+  renderPanel3NotesEditor() {
+    const container = document.getElementById("p3NotesEditorContainer");
+    if (!container) return;
+    const list = this.currentEditingNotes || [];
+
+    if (list.length === 0) {
+      container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">ยังไม่มีบันทึก — คลิกปุ่มด้านบนเพื่อเพิ่ม</div>`;
+      return;
+    }
+
+    container.innerHTML = list.map((note, idx) => `
+      <div style="background: var(--bg-chassis); border: 1px solid var(--border-hairline); padding: 8px 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+          <input type="text" class="form-control" style="font-size: 0.8rem;" value="${this.escapeHtml(note.text)}" placeholder="ข้อความบันทึก เช่น การทดสอบระบบสายพาน..." oninput="window.app.updateNoteItem(${idx}, 'text', this.value)">
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="btn-thumb-arrow" style="position: static;" onclick="window.app.moveNoteItem(${idx}, -1)" title="เลื่อนขึ้น">▲</button>
+            <button type="button" class="btn-thumb-arrow" style="position: static;" onclick="window.app.moveNoteItem(${idx}, 1)" title="เลื่อนลง">▼</button>
+            <button type="button" class="btn-doc-del" onclick="window.app.removeNoteItemFromPanel3Editor(${idx})" title="ลบบันทึกนี้">✕</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <input type="text" class="form-control" style="font-size: 0.75rem;" value="${this.escapeHtml(note.index || 'INDEX 01:00')}" placeholder="INDEX เช่น INDEX 03:12" oninput="window.app.updateNoteItem(${idx}, 'index', this.value)">
+          <input type="text" class="form-control" style="font-size: 0.75rem;" value="${this.escapeHtml(note.link || '#')}" placeholder="ลิงก์ปลายทาง เช่น courses.html" oninput="window.app.updateNoteItem(${idx}, 'link', this.value)">
+        </div>
+      </div>
+    `).join('');
+  }
+
+  updateNoteItem(idx, field, val) {
+    if (this.currentEditingNotes && this.currentEditingNotes[idx]) {
+      this.currentEditingNotes[idx][field] = val;
+    }
+  }
+
+  addNoteItemToPanel3Editor() {
+    if (!this.currentEditingNotes) this.currentEditingNotes = [];
+    this.currentEditingNotes.push({
+      text: "บันทึกการปฏิบัติงานและกรณีศึกษาใหม่",
+      index: `INDEX 0${this.currentEditingNotes.length + 1}:00`,
+      link: "courses.html"
+    });
+    this.renderPanel3NotesEditor();
+  }
+
+  moveNoteItem(idx, dir) {
+    if (!this.currentEditingNotes) return;
+    const tgt = idx + dir;
+    if (tgt < 0 || tgt >= this.currentEditingNotes.length) return;
+    const tmp = this.currentEditingNotes[idx];
+    this.currentEditingNotes[idx] = this.currentEditingNotes[tgt];
+    this.currentEditingNotes[tgt] = tmp;
+    this.renderPanel3NotesEditor();
+  }
+
+  removeNoteItemFromPanel3Editor(idx) {
+    if (!this.currentEditingNotes) return;
+    this.currentEditingNotes.splice(idx, 1);
+    this.renderPanel3NotesEditor();
+  }
+
+  saveDashboardPanel(num) {
+    if (!this.data.dashboard) {
+      this.data.dashboard = JSON.parse(JSON.stringify(window.DEFAULT_PORTFOLIO_DATA.dashboard));
+    }
+
+    if (num === 1) {
+      const title = document.getElementById("p1TitleInput")?.value.trim() || "SYSTEM HIGHLIGHTS";
+      const code = document.getElementById("p1CodeInput")?.value.trim() || "[SPEC_01]";
+      this.data.dashboard.panel1 = {
+        title: title,
+        code: code,
+        specs: this.currentEditingSpecs || []
+      };
+    } else if (num === 2) {
+      const title = document.getElementById("p2TitleInput")?.value.trim() || "IN THE FIELD";
+      const code = document.getElementById("p2CodeInput")?.value.trim() || "[FEED_02]";
+      const imageUrl = document.getElementById("p2ImageUrlInput")?.value.trim() || "";
+      const videoUrl = document.getElementById("p2VideoUrlInput")?.value.trim() || "";
+      const captionTag = document.getElementById("p2CaptionTagInput")?.value.trim() || "LAB WORKSHOP:";
+      const captionText = document.getElementById("p2CaptionTextInput")?.value.trim() || "";
+
+      this.data.dashboard.panel2 = {
+        title: title,
+        code: code,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
+        captionTag: captionTag,
+        captionText: captionText
+      };
+    } else if (num === 3) {
+      const title = document.getElementById("p3TitleInput")?.value.trim() || "FIELD NOTES";
+      const code = document.getElementById("p3CodeInput")?.value.trim() || "[LOGS_03]";
+      this.data.dashboard.panel3 = {
+        title: title,
+        code: code,
+        notes: this.currentEditingNotes || []
+      };
+    } else if (num === 4) {
+      const title = document.getElementById("p4TitleInput")?.value.trim() || "SYSTEM OVERVIEW";
+      const code = document.getElementById("p4CodeInput")?.value.trim() || "[CAD_04]";
+      const mode = document.getElementById("p4ModeSelect")?.value || "canvas";
+      const imageUrl = document.getElementById("p4ImageUrlInput")?.value.trim() || "";
+      const badgeLeft = document.getElementById("p4BadgeLeftInput")?.value.trim() || "SLD: 400V/230V 50Hz";
+      const badgeRight = document.getElementById("p4BadgeRightInput")?.value.trim() || "DWG: SCHEMATIC_REV2";
+
+      this.data.dashboard.panel4 = {
+        title: title,
+        code: code,
+        mode: mode,
+        imageUrl: imageUrl,
+        badgeLeft: badgeLeft,
+        badgeRight: badgeRight
+      };
+    }
+
+    this.saveData();
+    this.renderDashboardGrid();
+    this.closeCMSModal();
+    this.playTacticalBeep(1000, "triangle", 0.1);
+    alert(`บันทึกการแก้ไข Panel ${num} สำเร็จเรียบร้อยแล้ว!`);
   }
 
   filterCourses(cat) {
@@ -1102,9 +1703,7 @@ class PortfolioApp {
     const playMediaBtn = document.getElementById("playFieldMediaBtn");
     if (playMediaBtn) {
       playMediaBtn.addEventListener("click", () => {
-        this.openMediaModal(
-          `<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
-        );
+        this.playFieldVideo();
       });
     }
 
@@ -1167,6 +1766,7 @@ class PortfolioApp {
     document.body.classList.add("admin-mode");
     const dock = document.getElementById("adminDock");
     if (dock) dock.style.display = "flex";
+    this.renderDashboardGrid();
     this.renderCourses(this.currentCourseFilter || "all");
     this.renderActivities(this.currentActivityFilter || "all");
     this.setupProfilePaneDragAndDrop();
@@ -1178,6 +1778,7 @@ class PortfolioApp {
     this.isEditing = false;
     const dock = document.getElementById("adminDock");
     if (dock) dock.style.display = "none";
+    this.renderDashboardGrid();
     this.renderCourses(this.currentCourseFilter || "all");
     this.renderActivities(this.currentActivityFilter || "all");
     this.setupProfilePaneDragAndDrop();
