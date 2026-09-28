@@ -155,119 +155,6 @@
       </div>
     </section>
 
-    <!-- Modular 4-Panel Dashboard Grid (from Screenshot 2026-09-27) -->
-    <section class="tactical-container">
-      <div class="modular-dashboard-grid" id="modularDashboardGrid">
-        <!-- Panel 1: System Highlights (Accordion) -->
-        <div class="dash-panel hud-reticle">
-          <div class="panel-header">
-            <div class="panel-title">SYSTEM HIGHLIGHTS</div>
-            <div class="panel-code">[SPEC_01]</div>
-          </div>
-          <div class="specs-accordion" id="systemHighlightsAccordion">
-            <div class="spec-item open">
-              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
-                <span>INDUSTRIAL AUTOMATION & PLC</span>
-                <span class="toggle-icon">+</span>
-              </div>
-              <div class="spec-content">
-                เชี่ยวชาญการเขียนโปรแกรมควบคุม PLC (Siemens / Omron), Relay Ladder Logic, การเชื่อมต่อระบบนิวแมติกส์และเซนเซอร์ตรวจจับอัตโนมัติ
-              </div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
-                <span>POWER SYSTEM & ESTIMATION</span>
-                <span class="toggle-icon">+</span>
-              </div>
-              <div class="spec-content">
-                การออกแบบระบบไฟฟ้าโรงงานอุตสาหกรรม การคำนวณโหลด หม้อแปลงไฟฟ้า ระบบกราวด์ และการเขียนแบบแปลน Single Line Diagram ตามมาตรฐาน วสท./IEC
-              </div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
-                <span>VOCATIONAL PEDAGOGY</span>
-                <span class="toggle-icon">+</span>
-              </div>
-              <div class="spec-content">
-                การวิเคราะห์หลักสูตรช่างเทคนิค การออกแบบแผนการจัดการเรียนรู้ 4 ขั้นตอน (Four-Step Method) และการสร้างชุดฝึกปฏิบัติการไฟฟ้าเพื่อความปลอดภัย
-              </div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-header" onclick="window.app.toggleAccordion(this)">
-                <span>EMBEDDED & MOTOR DRIVE</span>
-                <span class="toggle-icon">+</span>
-              </div>
-              <div class="spec-content">
-                การควบคุมมอเตอร์ไฟฟ้ากระแสสลับ อินเวอร์เตอร์ VFD และการประยุกต์ใช้งานไมโครคอนโทรลเลอร์ IoT สำหรับมอนิเตอร์พลังงานไฟฟ้า
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 2: In The Field (Video / Media Preview) -->
-        <div class="dash-panel hud-reticle">
-          <div class="panel-header">
-            <div class="panel-title">IN THE FIELD</div>
-            <div class="panel-code">[FEED_02]</div>
-          </div>
-          <div class="field-media-frame" id="fieldMediaPreviewBox">
-            <img src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80" alt="Electrical Workshop Laboratory" class="field-media-img" id="fieldMediaImg">
-            <button class="play-overlay-btn" id="playFieldMediaBtn" title="ชมวิดีโอสาธิตการปฏิบัติงาน">
-              <i class="fa-solid fa-play"></i>
-            </button>
-          </div>
-          <div class="field-caption">
-            <strong>LAB WORKSHOP:</strong> ปฏิบัติการติดตั้งระบบควบคุมมอเตอร์ไฟฟ้าและตรวจวัดคุณภาพสัญญาณไฟฟ้า ณ มทร.อีสาน ขอนแก่น
-          </div>
-        </div>
-
-        <!-- Panel 3: Field Notes (Logs & Case Studies) -->
-        <div class="dash-panel hud-reticle">
-          <div class="panel-header">
-            <div class="panel-title">FIELD NOTES</div>
-            <div class="panel-code">[LOGS_03]</div>
-          </div>
-          <div class="field-notes-list">
-            <div class="note-entry">
-              <div class="note-text">การทดสอบระบบควบคุมสายพานคัดแยกวัสดุด้วย PLC S7-1200 และ HMI หน้าจอทัชสกรีน</div>
-              <div class="note-meta">
-                <span>INDEX 03:12</span>
-                <a href="courses.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
-              </div>
-            </div>
-            <div class="note-entry">
-              <div class="note-text">การลงพื้นที่บริการวิชาชาชีพ ตรวจเช็กระบบไฟฟ้าและตู้ MDB ชุมชนชนบท ขอนแก่น</div>
-              <div class="note-meta">
-                <span>INDEX 02:48</span>
-                <a href="activities.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
-              </div>
-            </div>
-            <div class="note-entry">
-              <div class="note-text">การออกแบบบทเรียนสื่อผสมสำหรับการสอนวิชาเครื่องมือวัดทางไฟฟ้าสำหรับนักศึกษาช่าง</div>
-              <div class="note-meta">
-                <span>INDEX 01:15</span>
-                <a href="courses.html" style="color: var(--accent-amber); text-decoration: none;" class="note-arrow">&gt;</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 4: System Overview (CAD / Blueprint Wireframe) -->
-        <div class="dash-panel hud-reticle">
-          <div class="panel-header">
-            <div class="panel-title">SYSTEM OVERVIEW</div>
-            <div class="panel-code">[CAD_04]</div>
-          </div>
-          <div class="cad-blueprint-frame">
-            <canvas id="cadBlueprintCanvas" class="blueprint-canvas"></canvas>
-          </div>
-          <div class="cad-badge">
-            <span>SLD: 400V/230V 50Hz</span>
-            <span>DWG: SCHEMATIC_REV2</span>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Hazard Caution Stripe Divider & System Telemetry HUD Bar (from Screenshot & Media Reference) -->
     <div class="hazard-stripes-telemetry-container">
@@ -646,9 +533,6 @@
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('items')">
         <i class="fa-solid fa-plus"></i> เพิ่มรายวิชา/ผลงาน
-      </button>
-      <button class="btn-dock" onclick="window.app.openDashboardManagerModal()">
-        <i class="fa-solid fa-table-columns"></i> 4-Panel Dashboard
       </button>
       <button class="btn-dock" onclick="window.app.openCMSModal('supabase')">
         <i class="fa-solid fa-database"></i> Supabase Cloud
