@@ -201,6 +201,17 @@ class PortfolioApp {
           merged.profile.heroWhiteTitle = window.DEFAULT_PORTFOLIO_DATA?.profile?.heroWhiteTitle || "THANAPHAT INCHUWONG";
         }
 
+        const defaultSupabase = window.DEFAULT_PORTFOLIO_DATA?.siteSettings?.supabase;
+        if (defaultSupabase && defaultSupabase.url && (!merged.siteSettings.supabase || !merged.siteSettings.supabase.url)) {
+          merged.siteSettings.supabase = {
+            ...defaultSupabase,
+            ...(merged.siteSettings.supabase || {}),
+            url: defaultSupabase.url,
+            anonKey: defaultSupabase.anonKey,
+            enabled: true
+          };
+        }
+
         merged = this.healBrokenImageUrls(merged);
 
         // Keep both storages synchronised with freshest state
@@ -3344,16 +3355,21 @@ class PortfolioApp {
     }
 
     try {
-      alertBox.innerHTML = `<span style="color: var(--accent-amber);">กำลังทดสอบการเชื่อมต่อ...</span>`;
+      alertBox.innerHTML = `<span style="color: var(--accent-amber);"><i class="fa-solid fa-spinner fa-spin"></i> กำลังทดสอบการเชื่อมต่อกับ Supabase...</span>`;
       const client = window.supabase.createClient(url, key);
+      const { data, error } = await client.from("portfolio_data").select("id").limit(1);
+      if (error && error.code !== "PGRST116") {
+        throw new Error(error.message || "Query failed");
+      }
       this.supabaseClient = client;
       this.data.siteSettings.supabase = { url, anonKey: key, enabled: true, lastSync: new Date().toISOString() };
       this.saveData();
       this.setupSupabaseRealtime();
+      this.updateStatusTelemetry("SUPABASE: REALTIME_LIVE");
 
       alertBox.innerHTML = `<span style="color: var(--signal-online);"><i class="fa-solid fa-check"></i> เชื่อมต่อ Supabase สำเร็จแล้ว! พร้อมซิงค์สด Realtime</span>`;
     } catch (e) {
-      alertBox.innerHTML = `<span style="color: var(--signal-rec);">เชื่อมต่อไม่สำเร็จ: ${e.message}</span>`;
+      alertBox.innerHTML = `<span style="color: var(--signal-rec);"><i class="fa-solid fa-triangle-exclamation"></i> เชื่อมต่อไม่สำเร็จ: ${e.message}</span>`;
     }
   }
 

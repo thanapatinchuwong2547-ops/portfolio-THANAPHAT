@@ -484,9 +484,9 @@ const DEFAULT_PORTFOLIO_DATA = {
     hudBracketsEnabled: true,
     telemetrySpeed: 1000,
     supabase: {
-      url: "",
-      anonKey: "",
-      enabled: false,
+      url: "https://dggbxzqcbhwezhxsdohn.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZ2J4enFjYmh3ZXpoeHNkb2huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTk2MDAsImV4cCI6MjEwNjMzNTYwMH0.uEZ4cPaJZD7e6f9BLulxtvo0Qt1Ol7eLghfuAXT3kcA",
+      enabled: true,
       lastSync: null
     }
   }
