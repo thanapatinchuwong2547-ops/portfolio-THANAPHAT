@@ -2605,3 +2605,12 @@ body.admin-mode .btn-add-artifact {
   color: #fff;
   border-color: var(--accent-primary);
 }
+
+.gallery-fallback-box {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+}

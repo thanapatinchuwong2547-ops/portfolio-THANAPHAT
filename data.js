@@ -64,7 +64,7 @@ const DEFAULT_PORTFOLIO_DATA = {
     panel2: {
       title: "IN THE FIELD",
       code: "[FEED_02]",
-      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+      imageUrl: "assets/activity_plc.jpg",
       videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       captionTag: "LAB WORKSHOP:",
       captionText: "ปฏิบัติการติดตั้งระบบควบคุมมอเตอร์ไฟฟ้าและตรวจวัดคุณภาพสัญญาณไฟฟ้า ณ มทร.อีสาน ขอนแก่น"
@@ -254,7 +254,7 @@ const DEFAULT_PORTFOLIO_DATA = {
               id: "att_c1_1",
               type: "image",
               name: "ภาพวงจรควบคุมและการต่อสายไฟตู้คอนโทรล",
-              url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
+              url: "assets/course_plc.jpg"
             },
             {
               id: "att_c1_2",
@@ -370,7 +370,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "มกราคม 2568",
       place: "ศูนย์แข่งขันทักษะวิชาชีพ อาชีวศึกษาภาคตะวันออกเฉียงเหนือ",
       badge: "AWARDS & HONORS",
-      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+      imageUrl: "assets/activity_plc.jpg",
       summary: "ตัวแทนสถานศึกษาเข้าร่วมการแข่งขันทักษะการควบคุมระบบอัตโนมัติด้วย PLC และระบบนิวแมติกส์ สามารถควบคุมการทำงานได้ตามเงื่อนไขอย่างถูกต้องแม่นยำ",
       certificateUrl: "",
       attachments: [
@@ -378,13 +378,13 @@ const DEFAULT_PORTFOLIO_DATA = {
           id: "att_act1_1",
           type: "image",
           name: "ภาพการต่อวงจรและเขียนโปรแกรมควบคุม PLC S7-1200",
-          url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
+          url: "assets/activity_plc.jpg"
         },
         {
           id: "att_act1_2",
           type: "image",
           name: "ภาพบรรยากาศการแข่งขันและการทดสอบระบบอัตโนมัติ",
-          url: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80"
+          url: "assets/activity_plc.jpg"
         },
         {
           id: "att_act1_3",
@@ -408,7 +408,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "ตุลาคม 2567",
       place: "มทร.อีสาน วิทยาเขตขอนแก่น",
       badge: "CERTIFICATION",
-      imageUrl: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+      imageUrl: "assets/activity_solar.jpg",
       summary: "เข้ารับการอบรมมาตรฐานการติดตั้ง Solar Rooftop, การคำนวณขนาด Inverter และการปฏิบัติตามมาตรฐานการไฟฟ้า MEA/PEA",
       certificateUrl: "",
       attachments: [
@@ -416,7 +416,7 @@ const DEFAULT_PORTFOLIO_DATA = {
           id: "att_act2_1",
           type: "image",
           name: "การฝึกปฏิบัติวัดค่ากำลังไฟฟ้าแผงโซลาร์เซลล์",
-          url: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80"
+          url: "assets/activity_solar.jpg"
         },
         {
           id: "att_act2_2",
@@ -434,7 +434,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "พฤศจิกายน 2567",
       place: "โรงเรียนในพื้นที่ชนบท จังหวัดขอนแก่น",
       badge: "COMMUNITY SERVICE",
-      imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80",
+      imageUrl: "assets/activity_community.jpg",
       summary: "นำทีมลงพื้นที่ปรับปรุงระบบแสงสว่าง ซ่อมบำรุงตู้ควบคุมไฟฟ้า และติดตั้งอุปกรณ์ป้องกันไฟฟ้ารั่ว (RCD) เพื่อความปลอดภัยของเด็กนักเรียน",
       certificateUrl: "",
       attachments: [
@@ -442,7 +442,7 @@ const DEFAULT_PORTFOLIO_DATA = {
           id: "att_act3_1",
           type: "image",
           name: "การตรวจเช็กและซ่อมบำรุงตู้ควบคุมไฟฟ้า",
-          url: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80"
+          url: "assets/activity_community.jpg"
         }
       ]
     },
@@ -454,7 +454,7 @@ const DEFAULT_PORTFOLIO_DATA = {
       date: "ธันวาคม 2567",
       place: "หอประชุม มทร.อีสาน วิทยาเขตขอนแก่น",
       badge: "EXTRACURRICULAR",
-      imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+      imageUrl: "assets/activity_music.jpg",
       summary: "ทำหน้าที่มือกีต้าร์และมือเบสประจำวงดนตรีนักศึกษาคณะครุศาสตร์อุตสาหกรรม สร้างความบันเทิงและเสริมสร้างความสามัคคีในสถาบัน",
       certificateUrl: "",
       attachments: [
@@ -462,7 +462,7 @@ const DEFAULT_PORTFOLIO_DATA = {
           id: "att_act4_1",
           type: "image",
           name: "ภาพการแสดงดนตรีสดบนเวที",
-          url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"
+          url: "assets/activity_music.jpg"
         },
         {
           id: "att_act4_2",

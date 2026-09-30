@@ -58,6 +58,81 @@ class PortfolioApp {
     this.init();
   }
 
+  healBrokenImageUrls(data) {
+    if (!data || typeof data !== "object") return data;
+    const urlMap = {
+      "photo-1509391365360": "assets/activity_solar.jpg",
+      "photo-1581092335397": "assets/activity_plc.jpg",
+      "photo-1581092160607": "assets/activity_plc.jpg",
+      "photo-1621905251189": "assets/activity_community.jpg",
+      "photo-1511671782779": "assets/activity_music.jpg"
+    };
+
+    let modified = false;
+    const fixUrl = (u) => {
+      if (typeof u !== "string") return u;
+      for (const [frag, replacement] of Object.entries(urlMap)) {
+        if (u.includes(frag) && u !== replacement) {
+          modified = true;
+          return replacement;
+        }
+      }
+      return u;
+    };
+
+    // Heal activities
+    if (Array.isArray(data.activities)) {
+      data.activities.forEach(act => {
+        act.imageUrl = fixUrl(act.imageUrl);
+        if (Array.isArray(act.attachments)) {
+          act.attachments.forEach(att => {
+            if (att.type === "image") {
+              att.url = fixUrl(att.url);
+            }
+          });
+        }
+      });
+    }
+
+    // Heal courses
+    if (Array.isArray(data.courses)) {
+      data.courses.forEach(c => {
+        if (Array.isArray(c.artifacts)) {
+          c.artifacts.forEach(art => {
+            art.fileUrl = fixUrl(art.fileUrl);
+            if (Array.isArray(art.attachments)) {
+              art.attachments.forEach(att => {
+                if (att.type === "image") {
+                  att.url = fixUrl(att.url);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Heal dashboard
+    if (data.dashboard) {
+      if (data.dashboard.panel2 && data.dashboard.panel2.imageUrl) {
+        data.dashboard.panel2.imageUrl = fixUrl(data.dashboard.panel2.imageUrl);
+      }
+      if (data.dashboard.panel4 && data.dashboard.panel4.imageUrl) {
+        data.dashboard.panel4.imageUrl = fixUrl(data.dashboard.panel4.imageUrl);
+      }
+    }
+
+    // Heal quickCards
+    if (Array.isArray(data.quickCards)) {
+      data.quickCards.forEach(qc => {
+        qc.imageUrl = fixUrl(qc.imageUrl);
+      });
+    }
+
+    data._healed = modified;
+    return data;
+  }
+
   // Load from localStorage or fallback to default
   loadData() {
     const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
@@ -68,7 +143,7 @@ class PortfolioApp {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        const merged = {
+        let merged = {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
           profile: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.profile), ...(parsed.profile || {}) },
@@ -103,6 +178,17 @@ class PortfolioApp {
         if (!merged.profile.heroWhiteTitle) {
           merged.profile.heroWhiteTitle = window.DEFAULT_PORTFOLIO_DATA?.profile?.heroWhiteTitle || "THANAPHAT INCHUWONG";
         }
+
+        merged = this.healBrokenImageUrls(merged);
+        if (merged._healed) {
+          delete merged._healed;
+          try {
+            localStorage.setItem(this.storageKey, JSON.stringify(merged));
+            console.log("[Self-Healing] Repaired broken image URLs in localStorage with reliable local assets.");
+          } catch (err) {
+            console.warn("Storage repair write error:", err);
+          }
+        }
         return merged;
       }
     } catch (e) {
@@ -112,7 +198,7 @@ class PortfolioApp {
     if (!Array.isArray(fallback.quickCards) || fallback.quickCards.length === 0) {
       fallback.quickCards = JSON.parse(JSON.stringify(DEFAULT_QUICK_CARDS));
     }
-    return fallback;
+    return this.healBrokenImageUrls(fallback);
   }
 
   saveData() {
@@ -762,8 +848,8 @@ class PortfolioApp {
           ` : ""}
 
           ${imageUrl ? `
-            <div class="quick-card-media-preview" onclick="window.app.openMediaModal('<img src=&quot;${imageUrl}&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" title="คลิกเพื่อดูภาพขยาย">
-              <img src="${imageUrl}" alt="${title}" class="quick-card-media-img">
+            <div class="quick-card-media-preview" onclick="window.app.openMediaModal('<img src=&quot;${imageUrl}&quot; onerror=&quot;this.onerror=null; this.src=\\\'assets/activity_plc.jpg\\\';&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" title="คลิกเพื่อดูภาพขยาย">
+              <img src="${imageUrl}" alt="${title}" class="quick-card-media-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';">
             </div>
           ` : ""}
 
@@ -1057,7 +1143,7 @@ class PortfolioApp {
           <div class="panel-code">${this.escapeHtml(p2.code || "[FEED_02]")}</div>
         </div>
         <div class="field-media-frame" id="fieldMediaPreviewBox">
-          <img src="${p2.imageUrl || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80'}" alt="${this.escapeHtml(p2.captionTag || 'IN THE FIELD')}" class="field-media-img" id="fieldMediaImg">
+          <img src="${p2.imageUrl || 'assets/activity_plc.jpg'}" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';" alt="${this.escapeHtml(p2.captionTag || 'IN THE FIELD')}" class="field-media-img" id="fieldMediaImg">
           <button class="play-overlay-btn" id="playFieldMediaBtn" onclick="window.app.playFieldVideo()" title="ชมวิดีโอสาธิตการปฏิบัติงาน">
             <i class="fa-solid fa-play"></i>
           </button>
@@ -2003,7 +2089,7 @@ class PortfolioApp {
     list.forEach((act) => {
       const card = document.createElement("div");
       card.className = "activity-card hud-reticle";
-      const defaultImg = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80";
+      const defaultImg = "assets/activity_plc.jpg";
 
       const atts = act.attachments || [];
       const imgAtts = atts.filter(a => a.type === "image" && a.url);
@@ -2013,7 +2099,7 @@ class PortfolioApp {
 
       card.innerHTML = `
         <div class="activity-media-box">
-          <img src="${coverImg}" alt="${this.escapeHtml(act.title)}" class="activity-img" onclick="window.app.openGalleryModal('${act.id}', 0)" style="cursor: pointer;" title="คลิกเพื่อดูรูปภาพขนาดใหญ่">
+          <img src="${coverImg}" alt="${this.escapeHtml(act.title)}" class="activity-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';" onclick="window.app.openGalleryModal('${act.id}', 0)" style="cursor: pointer;" title="คลิกเพื่อดูรูปภาพขนาดใหญ่">
           <div class="activity-badge">${act.badge || "ACHIEVEMENT"}</div>
         </div>
         <div class="activity-body">
@@ -2669,13 +2755,25 @@ class PortfolioApp {
     const container = document.getElementById("mediaModalContainer");
     if (!modal || !container) return;
     container.innerHTML = contentHtml;
+    if (contentHtml.includes("<iframe") || contentHtml.includes("<video")) {
+      container.style.aspectRatio = "16/9";
+      container.style.minHeight = "auto";
+      container.style.height = "auto";
+    } else {
+      container.style.aspectRatio = "unset";
+      container.style.minHeight = "460px";
+      container.style.height = "auto";
+    }
     modal.classList.add("open");
   }
 
   closeMediaModal() {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
-    if (container) container.innerHTML = "";
+    if (container) {
+      container.innerHTML = "";
+      container.style.aspectRatio = "16/9";
+    }
     if (modal) modal.classList.remove("open");
   }
 
@@ -3459,7 +3557,7 @@ class PortfolioApp {
           </div>
         </div>
 
-        <img src="${curImg.url}" alt="${this.escapeHtml(curImg.name || '')}" class="gallery-main-img">
+        <img src="${curImg.url}" alt="${this.escapeHtml(curImg.name || '')}" class="gallery-main-img" onerror="window.app.handleGalleryImgError(this, '${this.escapeHtml(curImg.name || '')}', '${encodeURIComponent(curImg.url)}')">
 
         <div class="gallery-nav-bar">
           <button type="button" class="btn-gallery-nav" onclick="window.app.stepGallery(-1)" ${images.length <= 1 ? 'disabled style="opacity:0.4;"' : ''}>
@@ -3476,6 +3574,44 @@ class PortfolioApp {
     `;
 
     this.openMediaModal(contentHtml);
+  }
+
+  handleGalleryImgError(imgEl, name, encodedUrl) {
+    if (!imgEl) return;
+    const origUrl = decodeURIComponent(encodedUrl || "");
+
+    if (imgEl.dataset.fallbackTried) {
+      imgEl.style.display = "none";
+      let box = imgEl.parentElement.querySelector(".gallery-fallback-box");
+      if (!box) {
+        box = document.createElement("div");
+        box.className = "gallery-fallback-box";
+        box.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.8rem 1.5rem; text-align: center; border: 1px dashed var(--accent-amber); background: rgba(15, 12, 10, 0.9); width: 100%; border-radius: 4px; box-sizing: border-box;">
+            <i class="fa-solid fa-image" style="font-size: 3rem; color: var(--accent-amber); margin-bottom: 0.8rem; opacity: 0.85;"></i>
+            <div style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-amber); font-size: 0.95rem; margin-bottom: 6px;">[ MEDIA_RESOURCE_UNAVAILABLE ]</div>
+            <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">${name || 'ไฟล์รูปภาพ'}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); max-width: 380px;">ไม่สามารถโหลดรูปภาพจากเซิร์ฟเวอร์ภายนอกได้ ระบบรักษาความปลอดภัย</div>
+          </div>
+        `;
+        imgEl.parentNode.insertBefore(box, imgEl.nextSibling);
+      }
+      return;
+    }
+
+    imgEl.dataset.fallbackTried = "true";
+    const lower = (name + " " + origUrl).toLowerCase();
+    let fallback = "assets/activity_plc.jpg";
+    if (lower.includes("solar") || lower.includes("โซลาร์") || lower.includes("พลังงาน")) {
+      fallback = "assets/activity_solar.jpg";
+    } else if (lower.includes("ดนตรี") || lower.includes("กีต้าร์") || lower.includes("music") || lower.includes("เบส")) {
+      fallback = "assets/activity_music.jpg";
+    } else if (lower.includes("จิตอาสา") || lower.includes("ชุมชน") || lower.includes("ซ่อมบำรุง")) {
+      fallback = "assets/activity_community.jpg";
+    } else if (lower.includes("course") || lower.includes("รายวิชา")) {
+      fallback = "assets/course_plc.jpg";
+    }
+    imgEl.src = fallback;
   }
 
   stepGallery(direction) {
