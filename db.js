@@ -1,4 +1,4 @@
-﻿// Native IndexedDB Manager for Thanaphat Portfolio
+// Native IndexedDB Manager for Thanaphat Portfolio
 // Enables storing videos, audio clips, custom fonts, images, and documents without size limits
 
 const DB_NAME = "ThanaphatPortfolioDB";
@@ -43,10 +43,31 @@ class AssetDB {
     return this.db;
   }
 
-  // Save an uploaded file
-  async saveAsset(file, category = "general", customId = null) {
+  // Save an uploaded file or asset record
+  async saveAsset(fileOrRecord, category = "general", customId = null) {
     const db = await this.ensureDB();
-    const id = customId || `asset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = customId || (fileOrRecord && fileOrRecord.id) || `asset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // If already has data string (e.g. base64 / data URL)
+    if (fileOrRecord && typeof fileOrRecord.data === "string") {
+      const record = {
+        id: id,
+        name: fileOrRecord.name || "asset",
+        size: fileOrRecord.size || fileOrRecord.data.length,
+        type: fileOrRecord.type || "application/octet-stream",
+        category: fileOrRecord.category || category,
+        createdAt: fileOrRecord.createdAt || new Date().toISOString(),
+        data: fileOrRecord.data
+      };
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_NAME], "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(record);
+        req.onsuccess = () => resolve(record);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -54,9 +75,9 @@ class AssetDB {
       reader.onload = async () => {
         const record = {
           id: id,
-          name: file.name,
-          size: file.size,
-          type: file.type || "application/octet-stream",
+          name: fileOrRecord.name,
+          size: fileOrRecord.size,
+          type: fileOrRecord.type || "application/octet-stream",
           category: category, // "image" | "video" | "audio" | "font" | "document"
           createdAt: new Date().toISOString(),
           data: reader.result // Data URL (base64)
@@ -71,7 +92,7 @@ class AssetDB {
       };
 
       reader.onerror = (e) => reject(e);
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(fileOrRecord);
     });
   }
 

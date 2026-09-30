@@ -50,6 +50,8 @@ class PortfolioApp {
   constructor() {
     this.storageKey = "thanaphat_portfolio_data_v1";
     this.authKey = "thanaphat_admin_session";
+    this.assetUrlCache = new Map();
+    this.realtimePollInterval = null;
     this.data = this.loadData();
     this.audioCtx = null;
     this.isEditing = false;
@@ -133,16 +135,36 @@ class PortfolioApp {
     return data;
   }
 
-  // Load from localStorage or fallback to default
+  // Load from localStorage/sessionStorage or fallback to default
   loadData() {
     const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
       ? window.DEFAULT_PORTFOLIO_DATA.quickCards
       : DEFAULT_QUICK_CARDS;
 
     try {
-      const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      // 1. Dual-source storage check (both sessionStorage and localStorage)
+      let localRaw = null;
+      let sessionRaw = null;
+      try { localRaw = localStorage.getItem(this.storageKey); } catch (e) {}
+      try { sessionRaw = sessionStorage.getItem(this.storageKey); } catch (e) {}
+
+      let chosenRaw = localRaw;
+      if (localRaw && sessionRaw) {
+        try {
+          const lObj = JSON.parse(localRaw);
+          const sObj = JSON.parse(sessionRaw);
+          const lTime = lObj.lastUpdated ? new Date(lObj.lastUpdated).getTime() : 0;
+          const sTime = sObj.lastUpdated ? new Date(sObj.lastUpdated).getTime() : 0;
+          chosenRaw = (sTime >= lTime) ? sessionRaw : localRaw;
+        } catch (e) {
+          chosenRaw = sessionRaw || localRaw;
+        }
+      } else if (!localRaw && sessionRaw) {
+        chosenRaw = sessionRaw;
+      }
+
+      if (chosenRaw) {
+        const parsed = JSON.parse(chosenRaw);
         let merged = {
           ...window.DEFAULT_PORTFOLIO_DATA,
           ...parsed,
@@ -180,15 +202,14 @@ class PortfolioApp {
         }
 
         merged = this.healBrokenImageUrls(merged);
-        if (merged._healed) {
-          delete merged._healed;
-          try {
-            localStorage.setItem(this.storageKey, JSON.stringify(merged));
-            console.log("[Self-Healing] Repaired broken image URLs in localStorage with reliable local assets.");
-          } catch (err) {
-            console.warn("Storage repair write error:", err);
-          }
-        }
+
+        // Keep both storages synchronised with freshest state
+        try {
+          const syncStr = JSON.stringify(merged);
+          localStorage.setItem(this.storageKey, syncStr);
+          sessionStorage.setItem(this.storageKey, syncStr);
+        } catch (err) {}
+
         return merged;
       }
     } catch (e) {
@@ -231,10 +252,48 @@ class PortfolioApp {
       }
     };
 
+    const processImgField = (obj, fieldKey, defaultName) => {
+      if (obj && obj[fieldKey] && typeof obj[fieldKey] === "string" && obj[fieldKey].startsWith("data:") && obj[fieldKey].length > 50000) {
+        if (obj[fieldKey + "AssetId"]) {
+          obj[fieldKey] = "indexeddb:" + obj[fieldKey + "AssetId"];
+        } else {
+          const fallbackId = `asset_img_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+          obj[fieldKey + "AssetId"] = fallbackId;
+          const origData = obj[fieldKey];
+          obj[fieldKey] = "indexeddb:" + fallbackId;
+          if (window.assetDB) {
+            window.assetDB.ensureDB().then(db => {
+              const tx = db.transaction(["uploaded_assets"], "readwrite");
+              tx.objectStore("uploaded_assets").put({
+                id: fallbackId,
+                name: defaultName || "image",
+                size: origData.length,
+                type: "image/jpeg",
+                category: "image",
+                createdAt: new Date().toISOString(),
+                data: origData
+              });
+            }).catch(e => console.warn("AssetDB image auto-fallback save error:", e));
+          }
+        }
+      }
+    };
+
     if (Array.isArray(copy.activities)) {
       copy.activities.forEach(a => {
         if (Array.isArray(a.attachments)) a.attachments.forEach(processAtt);
+        processImgField(a, "imageUrl", a.title);
       });
+    }
+
+    if (Array.isArray(copy.quickCards)) {
+      copy.quickCards.forEach(q => {
+        processImgField(q, "imageUrl", q.title);
+      });
+    }
+
+    if (copy.dashboard && copy.dashboard.panel4) {
+      processImgField(copy.dashboard.panel4, "imageUrl", "CAD Diagram");
     }
 
     if (Array.isArray(copy.courses)) {
@@ -277,44 +336,58 @@ class PortfolioApp {
   saveData() {
     try {
       this.data.lastUpdated = new Date().toISOString();
+      const payloadStr = JSON.stringify(this.data);
+
+      // 1. Session Storage write (bridges navigation across pages in same tab)
       try {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+        sessionStorage.setItem(this.storageKey, payloadStr);
+      } catch (sErr) {
+        console.warn("sessionStorage write warning:", sErr);
+      }
+
+      // 2. Local Storage write
+      try {
+        localStorage.setItem(this.storageKey, payloadStr);
       } catch (storageErr) {
         console.warn("localStorage quota exceeded, saving lightweight copy with IndexedDB references:", storageErr);
         const slimData = this.createLightweightDataCopy(this.data);
         localStorage.setItem(this.storageKey, JSON.stringify(slimData));
       }
-      this.updateStatusTelemetry();
 
-      // Realtime cross-tab broadcast bus
+      this.updateStatusTelemetry("DATA: SAVED");
+
+      // 3. Realtime cross-tab broadcast bus
       if (this.broadcastChannel) {
         try {
-          const payloadStr = JSON.stringify(this.data);
           const broadcastPayload = (payloadStr.length > 1500000)
             ? this.createLightweightDataCopy(this.data)
             : this.data;
           this.broadcastChannel.postMessage({
             type: "DATA_SYNC",
-            payload: broadcastPayload
+            payload: broadcastPayload,
+            lastUpdated: this.data.lastUpdated
           });
         } catch (err) {
           console.warn("BroadcastChannel error:", err);
         }
       }
 
+      // 4. Supabase Cloud Sync
       if (this.supabaseClient) {
-        const payloadStr = JSON.stringify(this.data);
         const cloudPayload = (payloadStr.length > 1500000)
           ? this.createLightweightDataCopy(this.data)
           : this.data;
         this.supabaseClient
           .from("portfolio_data")
-          .upsert({ id: "main_data", payload: cloudPayload, updated_at: new Date().toISOString() })
+          .upsert({ id: "main_data", payload: cloudPayload, updated_at: this.data.lastUpdated })
           .then(({ error }) => {
             if (!error) this.updateStatusTelemetry("SUPABASE: SYNCED");
           })
           .catch((e) => console.warn("Supabase auto-sync error:", e));
       }
+
+      // 5. Ensure current page re-renders in real-time
+      this.renderAll();
     } catch (e) {
       console.error("Failed to save data locally:", e);
     }
@@ -343,10 +416,12 @@ class PortfolioApp {
       if (e.key === this.storageKey && e.newValue) {
         try {
           const freshData = JSON.parse(e.newValue);
-          console.log("[Storage Event] Realtime sync from storage update");
-          this.data = freshData;
-          this.renderAll();
-          this.updateStatusTelemetry("STORAGE: LIVE_SYNC");
+          if (freshData && freshData.lastUpdated !== this.data.lastUpdated) {
+            console.log("[Storage Event] Realtime sync from storage update");
+            this.data = freshData;
+            this.renderAll();
+            this.updateStatusTelemetry("STORAGE: LIVE_SYNC");
+          }
         } catch (err) {
           console.warn("Storage sync parse error:", err);
         }
@@ -363,30 +438,69 @@ class PortfolioApp {
       this.checkAndReloadLatestData();
     });
 
-    // 4. Beforeunload flush
+    // 4. Active Realtime Polling Heartbeat (1.2s, detects external edits or other tab changes seamlessly)
+    if (!this.realtimePollInterval) {
+      this.realtimePollInterval = setInterval(() => {
+        this.checkAndReloadLatestData();
+      }, 1200);
+    }
+
+    // 5. Navigation link listener to guarantee sessionStorage is always up to date when switching pages
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest("a");
+      if (link && link.href && (link.href.includes(".html") || !link.href.includes("://"))) {
+        try {
+          sessionStorage.setItem(this.storageKey, JSON.stringify(this.data));
+        } catch (err) {}
+      }
+    });
+
+    // 6. Beforeunload flush
     window.addEventListener("beforeunload", () => {
       if (this.isEditing) {
         document.querySelectorAll("[data-cms-key]").forEach((el) => {
           this.saveCmsElement(el);
         });
       }
+      try {
+        sessionStorage.setItem(this.storageKey, JSON.stringify(this.data));
+      } catch (err) {}
     });
   }
 
   checkAndReloadLatestData() {
     try {
-      const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.lastUpdated && parsed.lastUpdated !== this.data.lastUpdated) {
-          console.log("[Focus Sync] Newer data found in storage, reloading");
-          this.data = this.loadData();
-          this.renderAll();
-          this.updateStatusTelemetry("AUTO_RELOADED");
-        }
+      let localRaw = null;
+      let sessionRaw = null;
+      try { localRaw = localStorage.getItem(this.storageKey); } catch (e) {}
+      try { sessionRaw = sessionStorage.getItem(this.storageKey); } catch (e) {}
+      const curTime = this.data.lastUpdated ? new Date(this.data.lastUpdated).getTime() : 0;
+
+      let candidateTime = 0;
+
+      if (sessionRaw) {
+        try {
+          const s = JSON.parse(sessionRaw);
+          const t = s.lastUpdated ? new Date(s.lastUpdated).getTime() : 0;
+          if (t > candidateTime) candidateTime = t;
+        } catch (e) {}
+      }
+      if (localRaw) {
+        try {
+          const l = JSON.parse(localRaw);
+          const t = l.lastUpdated ? new Date(l.lastUpdated).getTime() : 0;
+          if (t > candidateTime) candidateTime = t;
+        } catch (e) {}
+      }
+
+      if (candidateTime > curTime) {
+        console.log("[Realtime Sync] Newer data detected across tabs/storage, refreshing UI");
+        this.data = this.loadData();
+        this.renderAll();
+        this.updateStatusTelemetry("REALTIME: LIVE_SYNC");
       }
     } catch (e) {
-      console.warn("Focus reload error:", e);
+      console.warn("Realtime check error:", e);
     }
   }
 
@@ -935,8 +1049,8 @@ class PortfolioApp {
           ` : ""}
 
           ${imageUrl ? `
-            <div class="quick-card-media-preview" onclick="window.app.openMediaModal('<img src=&quot;${imageUrl}&quot; onerror=&quot;this.onerror=null; this.src=\\\'assets/activity_plc.jpg\\\';&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" title="คลิกเพื่อดูภาพขยาย">
-              <img src="${imageUrl}" alt="${title}" class="quick-card-media-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';">
+            <div class="quick-card-media-preview" onclick="window.app.openQuickCardMedia(${idx})" title="คลิกเพื่อดูภาพขยาย">
+              <img src="${this.getResolvedAssetUrl(imageUrl)}" data-raw-src="${imageUrl}" alt="${title}" class="quick-card-media-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';">
             </div>
           ` : ""}
 
@@ -964,6 +1078,14 @@ class PortfolioApp {
     }
 
     container.innerHTML = html;
+  }
+
+  openQuickCardMedia(cardIdx) {
+    if (!this.data?.quickCards || !this.data.quickCards[cardIdx]) return;
+    const card = this.data.quickCards[cardIdx];
+    if (card.imageUrl) {
+      this.openImageModal(card.imageUrl, card.title || "ภาพการ์ดข้อมูล");
+    }
   }
 
   openQuickCardModal(cardId = null) {
@@ -1277,7 +1399,7 @@ class PortfolioApp {
         </div>
         <div class="cad-blueprint-frame">
           ${p4.mode === 'image' && p4.imageUrl ? `
-            <img src="${p4.imageUrl}" alt="CAD Schematic Diagram" class="cad-custom-img" onclick="window.app.openMediaModal('<img src=&quot;${p4.imageUrl}&quot; style=&quot;max-width:90vw;max-height:85vh;object-fit:contain;&quot;>')" style="cursor: pointer; width: 100%; height: 100%; object-fit: contain;" title="คลิกเพื่อดูภาพวงจรขนาดใหญ่">
+            <img src="${this.getResolvedAssetUrl(p4.imageUrl)}" data-raw-src="${p4.imageUrl}" alt="CAD Schematic Diagram" class="cad-custom-img" onclick="window.app.openDashboardPanel4Image()" style="cursor: pointer; width: 100%; height: 100%; object-fit: contain;" title="คลิกเพื่อดูภาพวงจรขนาดใหญ่">
           ` : `
             <canvas id="cadBlueprintCanvas" class="blueprint-canvas"></canvas>
           `}
@@ -1291,6 +1413,13 @@ class PortfolioApp {
 
     if (!p4.mode || p4.mode === 'canvas' || !p4.imageUrl) {
       setTimeout(() => this.renderCadBlueprint(), 40);
+    }
+  }
+
+  openDashboardPanel4Image() {
+    const p4 = this.data?.dashboard?.panel4;
+    if (p4?.imageUrl) {
+      this.openImageModal(p4.imageUrl, p4.title || "CAD Schematic Diagram");
     }
   }
 
@@ -1878,7 +2007,7 @@ class PortfolioApp {
                     ${(imgAtts.length > 0 || pdfAtts.length > 0 || ytAtts.length > 0) ? `
                       <div class="media-chips-row" style="margin: 2px 0 0 0;">
                         ${imgAtts.length > 0 ? `
-                          <button type="button" class="media-chip chip-gallery" onclick="window.app.openGalleryModal(${JSON.stringify(imgAtts).replace(/"/g, '&quot;')}, 0)">
+                          <button type="button" class="media-chip chip-gallery" onclick="window.app.openCourseArtifactGallery('${c.id}', ${artIdx})">
                             <i class="fa-solid fa-images"></i> รูปภาพ (${imgAtts.length})
                           </button>
                         ` : ''}
@@ -2144,6 +2273,18 @@ class PortfolioApp {
     }
   }
 
+  openCourseArtifactGallery(courseId, artifactIdx) {
+    const c = this.data?.courses?.find((item) => item.id === courseId);
+    if (!c || !c.artifacts || !c.artifacts[artifactIdx]) return;
+    const art = c.artifacts[artifactIdx];
+    const imgAtts = (art.attachments || []).filter(a => a.type === "image" && a.url);
+    if (imgAtts.length > 0) {
+      this.openGalleryModal(imgAtts, 0);
+    } else {
+      alert("ไม่มีรูปภาพในชิ้นงานนี้");
+    }
+  }
+
   filterActivities(cat) {
     this.currentActivityFilter = cat;
     document.querySelectorAll("#activityFilterBar .filter-btn").forEach((b) => b.classList.remove("active"));
@@ -2182,11 +2323,12 @@ class PortfolioApp {
       const imgAtts = atts.filter(a => a.type === "image" && a.url);
       const pdfAtts = atts.filter(a => a.type === "pdf" && a.url);
       const ytAtts = atts.filter(a => a.type === "youtube" && a.url);
-      const coverImg = imgAtts.length > 0 ? imgAtts[0].url : (act.imageUrl || defaultImg);
+      const rawCover = imgAtts.length > 0 ? imgAtts[0].url : (act.imageUrl || defaultImg);
+      const coverImg = this.getResolvedAssetUrl(rawCover);
 
       card.innerHTML = `
         <div class="activity-media-box">
-          <img src="${coverImg}" alt="${this.escapeHtml(act.title)}" class="activity-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';" onclick="window.app.openGalleryModal('${act.id}', 0)" style="cursor: pointer;" title="คลิกเพื่อดูรูปภาพขนาดใหญ่">
+          <img src="${coverImg}" data-raw-src="${rawCover}" alt="${this.escapeHtml(act.title)}" class="activity-img" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';" onclick="window.app.openGalleryModal('${act.id}', 0)" style="cursor: pointer;" title="คลิกเพื่อดูรูปภาพขนาดใหญ่">
           <div class="activity-badge">${act.badge || "ACHIEVEMENT"}</div>
         </div>
         <div class="activity-body">
@@ -2672,7 +2814,7 @@ class PortfolioApp {
     if (!asset) return;
 
     if (asset.category === "image") {
-      this.openMediaModal(`<img src="${asset.data}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`);
+      this.openImageModal(asset.data, asset.name || "Asset Image");
     } else if (asset.category === "video") {
       this.openMediaModal(`<video src="${asset.data}" controls autoplay style="max-width: 100%; max-height: 100%;"></video>`);
     } else if (asset.category === "audio") {
@@ -2837,11 +2979,67 @@ class PortfolioApp {
     a.remove();
   }
 
-  openMediaModal(contentHtml, customMode = null) {
+  async resolveMediaUrl(url) {
+    if (!url || typeof url !== "string") return url || "";
+    if (url.startsWith("indexeddb:")) {
+      const assetId = url.replace("indexeddb:", "").trim();
+      if (!this.assetUrlCache) this.assetUrlCache = new Map();
+      if (this.assetUrlCache.has(url)) {
+        return this.assetUrlCache.get(url);
+      }
+      if (window.assetDB) {
+        try {
+          const asset = await window.assetDB.getAsset(assetId);
+          if (asset && asset.data) {
+            let finalUrl = asset.data;
+            if (typeof asset.data === "string" && asset.data.startsWith("data:")) {
+              const mime = asset.type || (asset.category === "document" ? "application/pdf" : "image/jpeg");
+              const blob = this.dataURLtoBlob(asset.data, mime);
+              if (blob) {
+                finalUrl = URL.createObjectURL(blob);
+              }
+            }
+            this.assetUrlCache.set(url, finalUrl);
+            return finalUrl;
+          }
+        } catch (e) {
+          console.warn("Failed to resolve asset from IndexedDB:", e);
+        }
+      }
+    }
+    return url;
+  }
+
+  getResolvedAssetUrl(url, fallback = "assets/activity_plc.jpg") {
+    if (!url || typeof url !== "string") return fallback;
+    if (!url.startsWith("indexeddb:")) return url;
+    if (!this.assetUrlCache) this.assetUrlCache = new Map();
+    if (this.assetUrlCache.has(url)) {
+      return this.assetUrlCache.get(url);
+    }
+    this.resolveMediaUrl(url).then(resolved => {
+      if (resolved && resolved !== url) {
+        document.querySelectorAll('img[data-raw-src]').forEach(img => {
+          if (img.getAttribute('data-raw-src') === url) {
+            img.src = resolved;
+          }
+        });
+      }
+    });
+    return fallback;
+  }
+
+  openMediaModal(contentHtml, customMode = null, customTitle = null) {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
     const dialog = modal?.querySelector(".admin-login-dialog");
+    const titleEl = modal?.querySelector(".dialog-title");
     if (!modal || !container) return;
+
+    if (customTitle && titleEl) {
+      titleEl.innerHTML = customTitle;
+    }
+
     container.innerHTML = contentHtml;
 
     if (customMode === "pdf" || contentHtml.includes("fa-file-pdf") || contentHtml.includes("download=")) {
@@ -2852,9 +3050,19 @@ class PortfolioApp {
       container.style.aspectRatio = "unset";
       container.style.height = "75vh";
       container.style.minHeight = "500px";
-    } else if (contentHtml.includes("<iframe") || contentHtml.includes("<video")) {
+      container.style.maxHeight = "85vh";
+    } else if (customMode === "image") {
       if (dialog) {
-        dialog.style.maxWidth = "800px";
+        dialog.style.maxWidth = "960px";
+        dialog.style.width = "95vw";
+      }
+      container.style.aspectRatio = "unset";
+      container.style.height = "auto";
+      container.style.minHeight = "400px";
+      container.style.maxHeight = "82vh";
+    } else if (customMode === "video" || contentHtml.includes("<iframe") || contentHtml.includes("<video")) {
+      if (dialog) {
+        dialog.style.maxWidth = "850px";
         dialog.style.width = "95%";
       }
       container.style.aspectRatio = "16/9";
@@ -2862,7 +3070,7 @@ class PortfolioApp {
       container.style.height = "auto";
     } else {
       if (dialog) {
-        dialog.style.maxWidth = "800px";
+        dialog.style.maxWidth = "850px";
         dialog.style.width = "95%";
       }
       container.style.aspectRatio = "unset";
@@ -2876,6 +3084,10 @@ class PortfolioApp {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
     const dialog = modal?.querySelector(".admin-login-dialog");
+    const titleEl = modal?.querySelector(".dialog-title");
+    if (titleEl) {
+      titleEl.innerHTML = '<i class="fa-solid fa-play"></i> MEDIA VIEWER';
+    }
     if (container) {
       container.innerHTML = "";
       container.style.aspectRatio = "16/9";
@@ -2887,6 +3099,32 @@ class PortfolioApp {
       dialog.style.width = "95%";
     }
     if (modal) modal.classList.remove("open");
+  }
+
+  async openImageModal(rawUrl, rawTitle = "รูปภาพ") {
+    const url = await this.resolveMediaUrl(rawUrl);
+    const title = decodeURIComponent(rawTitle || "รูปภาพ");
+    const safeTitle = this.escapeHtml(title);
+
+    const contentHtml = `
+      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; max-height: 80vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px; margin-bottom: 12px; width: 100%;">
+          <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700; font-size: 0.9rem;">
+            <i class="fa-solid fa-image" style="color: var(--accent-amber); margin-right: 6px;"></i> ${safeTitle}
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <a href="${url}" download="${safeTitle}.jpg" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-download"></i> ดาวน์โหลดรูปภาพ</a>
+            <a href="${url}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่</a>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; flex: 1; overflow: hidden; background: #0c0b0a; border: 1px solid var(--border-hairline); border-radius: 4px; padding: 12px; min-height: 380px;">
+          <img src="${url}" alt="${safeTitle}" style="max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: 3px; box-shadow: 0 0 25px rgba(0,0,0,0.8);" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';">
+        </div>
+      </div>
+    `;
+
+    this.openMediaModal(contentHtml, "image", `<i class="fa-solid fa-image"></i> ${safeTitle}`);
+    this.playTacticalBeep(880, "sine", 0.05);
   }
 
   previewArtifact(name, url) {
@@ -3338,7 +3576,7 @@ class PortfolioApp {
               const globalIdx = list.indexOf(att);
               return `
                 <div class="preview-thumb-card" title="${this.escapeHtml(att.name || 'รูปภาพ')}">
-                  <img src="${att.url}" alt="${this.escapeHtml(att.name || '')}">
+                  <img src="${this.getResolvedAssetUrl(att.url)}" data-raw-src="${att.url}" alt="${this.escapeHtml(att.name || '')}" onerror="this.onerror=null; this.src='assets/activity_plc.jpg';">
                   <div class="preview-thumb-caption">${this.escapeHtml(att.name || 'รูปภาพ')}</div>
                   <button type="button" class="btn-thumb-del" onclick="window.app.removeAttachment(${globalIdx})" title="ลบรูปนี้">✕</button>
                   <div class="preview-thumb-order">
@@ -3707,29 +3945,33 @@ class PortfolioApp {
     this.playTacticalBeep(880, "sine", 0.05);
   }
 
-  renderGalleryModalContent() {
+  async renderGalleryModalContent() {
     if (!this.activeGallery || !this.activeGallery.images.length) return;
     const { images, currentIndex } = this.activeGallery;
     const curImg = images[currentIndex];
+    const resolvedUrl = await this.resolveMediaUrl(curImg.url);
+    const safeName = this.escapeHtml(curImg.name || 'รูปภาพ');
 
     const contentHtml = `
       <div class="gallery-viewer-frame">
         <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
           <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-amber); font-weight: 700;">
-            <i class="fa-solid fa-camera"></i> ${this.escapeHtml(curImg.name || 'รูปภาพ')}
+            <i class="fa-solid fa-camera"></i> ${safeName}
           </div>
           <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
             [ ${currentIndex + 1} / ${images.length} ]
           </div>
         </div>
 
-        <img src="${curImg.url}" alt="${this.escapeHtml(curImg.name || '')}" class="gallery-main-img" onerror="window.app.handleGalleryImgError(this, '${this.escapeHtml(curImg.name || '')}', '${encodeURIComponent(curImg.url)}')">
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 380px; max-height: 65vh; background: #0c0b0a; border: 1px solid var(--border-hairline); border-radius: 4px; overflow: hidden; margin: 10px 0;">
+          <img src="${resolvedUrl}" alt="${safeName}" class="gallery-main-img" style="max-width: 100%; max-height: 65vh; object-fit: contain;" onerror="window.app.handleGalleryImgError(this, '${safeName}', '${encodeURIComponent(curImg.url)}')">
+        </div>
 
         <div class="gallery-nav-bar">
           <button type="button" class="btn-gallery-nav" onclick="window.app.stepGallery(-1)" ${images.length <= 1 ? 'disabled style="opacity:0.4;"' : ''}>
             <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า (Prev)
           </button>
-          <a href="${curImg.url}" target="_blank" download class="btn-dock" style="font-size: 0.78rem;">
+          <a href="${resolvedUrl}" download="${safeName}.jpg" target="_blank" class="btn-dock" style="font-size: 0.78rem;">
             <i class="fa-solid fa-download"></i> ดาวน์โหลดรูปภาพ
           </a>
           <button type="button" class="btn-gallery-nav" onclick="window.app.stepGallery(1)" ${images.length <= 1 ? 'disabled style="opacity:0.4;"' : ''}>
@@ -3739,12 +3981,21 @@ class PortfolioApp {
       </div>
     `;
 
-    this.openMediaModal(contentHtml);
+    this.openMediaModal(contentHtml, "image", `<i class="fa-solid fa-images"></i> แกลเลอรีรูปภาพ`);
   }
 
-  handleGalleryImgError(imgEl, name, encodedUrl) {
+  async handleGalleryImgError(imgEl, name, encodedUrl) {
     if (!imgEl) return;
     const origUrl = decodeURIComponent(encodedUrl || "");
+
+    if (origUrl.startsWith("indexeddb:") && !imgEl.dataset.indexedDbRetried) {
+      imgEl.dataset.indexedDbRetried = "true";
+      const resolved = await this.resolveMediaUrl(origUrl);
+      if (resolved && resolved !== origUrl) {
+        imgEl.src = resolved;
+        return;
+      }
+    }
 
     if (imgEl.dataset.fallbackTried) {
       imgEl.style.display = "none";
@@ -3889,10 +4140,18 @@ class PortfolioApp {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  window.app = new PortfolioApp();
-  window.openQuickCardModal = (id) => window.app?.openQuickCardModal(id);
-  window.resetDefaultQuickCards = () => window.app?.resetDefaultQuickCards();
-  window.exportMasterDataJs = () => window.app?.exportMasterDataJs();
-  window.importDataJSON = (file) => window.app?.importDataJSON(file);
-});
+const initApp = () => {
+  if (!window.app) {
+    window.app = new PortfolioApp();
+    window.openQuickCardModal = (id) => window.app?.openQuickCardModal(id);
+    window.resetDefaultQuickCards = () => window.app?.resetDefaultQuickCards();
+    window.exportMasterDataJs = () => window.app?.exportMasterDataJs();
+    window.importDataJSON = (file) => window.app?.importDataJSON(file);
+  }
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
