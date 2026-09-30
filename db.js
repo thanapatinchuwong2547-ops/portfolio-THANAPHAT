@@ -77,7 +77,7 @@ class AssetDB {
           id: id,
           name: fileOrRecord.name,
           size: fileOrRecord.size,
-          type: fileOrRecord.type || "application/octet-stream",
+          type: fileOrRecord.type || (category === "document" || (fileOrRecord.name && fileOrRecord.name.toLowerCase().endsWith(".pdf")) ? "application/pdf" : "application/octet-stream"),
           category: category, // "image" | "video" | "audio" | "font" | "document"
           createdAt: new Date().toISOString(),
           data: reader.result // Data URL (base64)

@@ -1926,13 +1926,13 @@ class PortfolioApp {
   promptAddCourse() {
     if (!this.checkAdminOrPrompt("เพิ่มรายวิชาใหม่")) return;
     this.openCMSModal("items");
-    setTimeout(() => this.switchItemTab("course"), 50);
+    this.switchItemTab("course");
   }
 
   promptAddActivity() {
     if (!this.checkAdminOrPrompt("เพิ่มกิจกรรม/ผลงานใหม่")) return;
     this.openCMSModal("items");
-    setTimeout(() => this.switchItemTab("activity"), 50);
+    this.switchItemTab("activity");
   }
 
   renderCourses(category = "all") {
@@ -2684,7 +2684,7 @@ class PortfolioApp {
             <i class="fa-solid fa-file-arrow-up" style="font-size: 2.5rem; color: var(--accent-primary); margin-bottom: 0.5rem;"></i>
             <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">อัปโหลดไฟล์ทุกประเภท (คลิปวิดีโอ, ไฟล์เสียง, ฟอนต์, รูปภาพ, เอกสาร PDF)</div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">ไฟล์จะถูกจัดเก็บในฐานข้อมูล IndexedDB ประจำเครื่องแบบถาวร ไม่จำกัดขนาด</div>
-            <input type="file" id="universalAssetUploadInput" multiple onchange="window.app.handleUniversalFileUpload(event)" style="display: none;">
+            <input type="file" id="universalAssetUploadInput" accept="image/*,video/*,audio/*,.pdf,application/pdf,.woff,.woff2,.ttf" multiple onchange="window.app.handleUniversalFileUpload(event)" style="display: none;">
             <button class="btn-tactical btn-tactical-primary" onclick="document.getElementById('universalAssetUploadInput').click()">
               <i class="fa-solid fa-plus"></i> เลือกไฟล์เพื่ออัปโหลด
             </button>
@@ -2773,7 +2773,24 @@ class PortfolioApp {
       else if (file.type.startsWith("audio/")) cat = "audio";
       else if (file.name.endsWith(".ttf") || file.name.endsWith(".woff") || file.name.endsWith(".woff2")) cat = "font";
 
-      await window.assetDB.saveAsset(file, cat);
+      try {
+        const dataUrl = await this.readFileAsDataURL(file);
+        const assetId = `asset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (window.assetDB) {
+          await window.assetDB.saveAsset({
+            id: assetId,
+            name: file.name,
+            size: file.size,
+            type: file.type || (cat === "document" ? "application/pdf" : "application/octet-stream"),
+            category: cat,
+            data: dataUrl
+          }, cat, assetId);
+        }
+        if (!this.assetUrlCache) this.assetUrlCache = new Map();
+        this.assetUrlCache.set(`indexeddb:${assetId}`, dataUrl);
+      } catch (err) {
+        console.error("Failed to upload universal asset:", err);
+      }
     }
 
     alert(`อัปโหลดเสร็จสิ้น ${files.length} ไฟล์!`);
@@ -2819,6 +2836,8 @@ class PortfolioApp {
       this.openMediaModal(`<video src="${asset.data}" controls autoplay style="max-width: 100%; max-height: 100%;"></video>`);
     } else if (asset.category === "audio") {
       this.openMediaModal(`<audio src="${asset.data}" controls autoplay style="width: 80%;"></audio>`);
+    } else if (asset.category === "document" || (asset.name && asset.name.toLowerCase().endsWith(".pdf"))) {
+      this.openPdfModal(asset.data, asset.name || "เอกสาร PDF");
     } else {
       window.open(asset.data, "_blank");
     }
@@ -3006,6 +3025,57 @@ class PortfolioApp {
           console.warn("Failed to resolve asset from IndexedDB:", e);
         }
       }
+
+      // In-memory fallback: Search courses artifacts
+      if (this.data && this.data.courses) {
+        for (const c of this.data.courses) {
+          for (const a of (c.artifacts || [])) {
+            for (const att of (a.attachments || [])) {
+              if ((att.url === url || att.assetId === assetId) && (att.dataUrl || (att.url && !att.url.startsWith("indexeddb:")))) {
+                let candidate = att.dataUrl || att.url;
+                if (typeof candidate === "string" && candidate.startsWith("data:")) {
+                  const blob = this.dataURLtoBlob(candidate, att.type === "pdf" ? "application/pdf" : "image/jpeg");
+                  if (blob) candidate = URL.createObjectURL(blob);
+                }
+                this.assetUrlCache.set(url, candidate);
+                return candidate;
+              }
+            }
+          }
+        }
+      }
+
+      // In-memory fallback: Search activities
+      if (this.data && this.data.activities) {
+        for (const a of this.data.activities) {
+          for (const att of (a.attachments || [])) {
+            if ((att.url === url || att.assetId === assetId) && (att.dataUrl || (att.url && !att.url.startsWith("indexeddb:")))) {
+              let candidate = att.dataUrl || att.url;
+              if (typeof candidate === "string" && candidate.startsWith("data:")) {
+                const blob = this.dataURLtoBlob(candidate, att.type === "pdf" ? "application/pdf" : "image/jpeg");
+                if (blob) candidate = URL.createObjectURL(blob);
+              }
+              this.assetUrlCache.set(url, candidate);
+              return candidate;
+            }
+          }
+        }
+      }
+
+      // In-memory fallback: Search currentEditingAttachments
+      if (this.currentEditingAttachments) {
+        for (const att of this.currentEditingAttachments) {
+          if ((att.url === url || att.assetId === assetId) && (att.dataUrl || (att.url && !att.url.startsWith("indexeddb:")))) {
+            let candidate = att.dataUrl || att.url;
+            if (typeof candidate === "string" && candidate.startsWith("data:")) {
+              const blob = this.dataURLtoBlob(candidate, att.type === "pdf" ? "application/pdf" : "image/jpeg");
+              if (blob) candidate = URL.createObjectURL(blob);
+            }
+            this.assetUrlCache.set(url, candidate);
+            return candidate;
+          }
+        }
+      }
     }
     return url;
   }
@@ -3042,15 +3112,15 @@ class PortfolioApp {
 
     container.innerHTML = contentHtml;
 
-    if (customMode === "pdf" || contentHtml.includes("fa-file-pdf") || contentHtml.includes("download=")) {
+    if (customMode === "pdf" || contentHtml.includes("fa-file-pdf") || contentHtml.includes("downloadPdfFile") || contentHtml.includes("download=")) {
       if (dialog) {
-        dialog.style.maxWidth = "960px";
+        dialog.style.maxWidth = "1050px";
         dialog.style.width = "95vw";
       }
       container.style.aspectRatio = "unset";
-      container.style.height = "75vh";
-      container.style.minHeight = "500px";
-      container.style.maxHeight = "85vh";
+      container.style.height = "80vh";
+      container.style.minHeight = "520px";
+      container.style.maxHeight = "90vh";
     } else if (customMode === "image") {
       if (dialog) {
         dialog.style.maxWidth = "960px";
@@ -3693,26 +3763,28 @@ class PortfolioApp {
     const files = Array.from(fileList);
     for (const file of files) {
       try {
-        let assetId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
-        let dataUrl = "";
+        const assetId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
+        const dataUrl = await this.readFileAsDataURL(file);
 
-        // 1. Read file as Data URL
-        dataUrl = await this.readFileAsDataURL(file);
-
-        // 2. Persist to IndexedDB assetDB for permanent zero-limit storage
         if (window.assetDB) {
           try {
-            const saved = await window.assetDB.saveAsset(file, "document", assetId);
-            if (saved && saved.id) {
-              assetId = saved.id;
-            }
+            await window.assetDB.saveAsset({
+              id: assetId,
+              name: file.name,
+              size: file.size,
+              type: file.type || "application/pdf",
+              category: "document",
+              data: dataUrl
+            }, "document", assetId);
           } catch (dbErr) {
             console.warn("Could not save PDF to AssetDB:", dbErr);
           }
         }
 
-        // Keep indexeddb: pointer if saved in assetDB to guarantee 0 quota issues
         const finalUrl = (window.assetDB && assetId) ? `indexeddb:${assetId}` : dataUrl;
+
+        if (!this.assetUrlCache) this.assetUrlCache = new Map();
+        this.assetUrlCache.set(`indexeddb:${assetId}`, dataUrl);
 
         this.currentEditingAttachments.push({
           id: `att_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
@@ -3720,7 +3792,8 @@ class PortfolioApp {
           name: file.name,
           size: file.size,
           assetId: assetId,
-          url: finalUrl
+          url: finalUrl,
+          dataUrl: dataUrl
         });
       } catch (err) {
         console.error("Failed to read PDF file:", err);
@@ -4059,51 +4132,86 @@ class PortfolioApp {
     }
   }
 
+  downloadPdfFile(rawUrl, rawFilename) {
+    const url = decodeURIComponent(rawUrl || "");
+    const filename = decodeURIComponent(rawFilename || "document.pdf");
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (a.parentNode) a.parentNode.removeChild(a);
+    }, 100);
+  }
+
   async openPdfModal(rawUrl, rawTitle) {
     let url = decodeURIComponent(rawUrl || "");
     const title = decodeURIComponent(rawTitle || "เอกสาร PDF");
+    const safeTitle = this.escapeHtml(title);
+    const downloadFilename = safeTitle.toLowerCase().endsWith(".pdf") ? safeTitle : `${safeTitle}.pdf`;
 
-    // 1. Resolve indexeddb: URLs from local AssetDB
-    if (url.startsWith("indexeddb:")) {
-      const assetId = url.replace("indexeddb:", "").trim();
-      if (window.assetDB) {
-        try {
-          const asset = await window.assetDB.getAsset(assetId);
-          if (asset && asset.data) {
-            url = asset.data;
-          }
-        } catch (dbErr) {
-          console.warn("Could not resolve asset from IndexedDB:", dbErr);
-        }
-      }
-    }
+    // 1. Resolve indexeddb: URLs from local AssetDB or in-memory caches
+    let resolvedUrl = await this.resolveMediaUrl(url);
 
     // 2. Convert Data URL to clean native Blob URL to prevent browser navigation blocking
-    let viewerUrl = url;
-    if (url.startsWith("data:")) {
-      const blob = this.dataURLtoBlob(url, "application/pdf");
+    let viewerUrl = resolvedUrl;
+    if (typeof resolvedUrl === "string" && resolvedUrl.startsWith("data:")) {
+      const blob = this.dataURLtoBlob(resolvedUrl, "application/pdf");
       if (blob) {
         viewerUrl = URL.createObjectURL(blob);
       }
     }
 
-    const safeTitle = this.escapeHtml(title);
-    const downloadFilename = safeTitle.toLowerCase().endsWith(".pdf") ? safeTitle : `${safeTitle}.pdf`;
+    const isUnresolved = typeof viewerUrl === "string" && viewerUrl.startsWith("indexeddb:");
 
-    this.openMediaModal(`
-      <div style="display: flex; flex-direction: column; gap: 10px; width: 90vw; max-width: 950px; height: 80vh;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
-          <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700;">
-            <i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> ${safeTitle}
-          </span>
-          <div style="display: flex; gap: 8px;">
-            <a href="${viewerUrl}" download="${downloadFilename}" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-download"></i> ดาวน์โหลด PDF</a>
-            <a href="${viewerUrl}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่</a>
+    let contentHtml = "";
+    if (isUnresolved) {
+      contentHtml = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 400px; padding: 2.5rem 1.5rem; text-align: center; background: #0c0b0a; border: 1px dashed var(--accent-amber); border-radius: 4px; box-sizing: border-box;">
+          <i class="fa-solid fa-file-circle-exclamation" style="font-size: 3.5rem; color: #ef5350; margin-bottom: 1rem; opacity: 0.9;"></i>
+          <div style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-amber); font-size: 1.05rem; margin-bottom: 8px;">[ PDF_RESOURCE_UNAVAILABLE ]</div>
+          <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600; margin-bottom: 10px;">${safeTitle}</div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); max-width: 440px; line-height: 1.6; margin-bottom: 1.25rem;">
+            ไม่พบไฟล์ PDF ในฐานข้อมูลแคชเครื่อง หรือไฟล์ถูกอัปโหลดจากหน้าต่างอื่น คุณสามารถอัปโหลดไฟล์ใหม่ได้ทันทีผ่านปุ่มแก้ไขชิ้นงาน
+          </p>
+        </div>
+      `;
+    } else {
+      contentHtml = `
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
+            <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">
+              <i class="fa-solid fa-file-pdf" style="color: #ef5350; margin-right: 6px;"></i> ${safeTitle}
+            </span>
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+              <button type="button" class="btn-dock" style="font-size: 0.75rem;" onclick="window.app.downloadPdfFile('${encodeURIComponent(viewerUrl)}', '${encodeURIComponent(downloadFilename)}')">
+                <i class="fa-solid fa-download"></i> ดาวน์โหลด PDF
+              </button>
+              <a href="${viewerUrl}" target="_blank" rel="noopener noreferrer" class="btn-dock" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่
+              </a>
+            </div>
+          </div>
+          <div style="flex: 1; width: 100%; min-height: 480px; height: calc(100% - 45px); background: #1a1a1a; border: 1px solid var(--border-hairline); border-radius: 4px; overflow: hidden;">
+            <object data="${viewerUrl}" type="application/pdf" style="width: 100%; height: 100%; min-height: 480px; display: block; border: none;">
+              <iframe src="${viewerUrl}" style="width: 100%; height: 100%; min-height: 480px; border: none;" title="${safeTitle}">
+                <div style="padding: 2.5rem; text-align: center; color: var(--text-secondary); font-family: var(--font-mono);">
+                  <i class="fa-solid fa-file-pdf" style="font-size: 3rem; color: #ef5350; margin-bottom: 1rem;"></i>
+                  <p style="margin-bottom: 1rem;">เบราว์เซอร์ไม่รองรับการแสดงตัวอย่าง PDF ในหน้าต่างนี้โดยตรง</p>
+                  <button type="button" class="btn-tactical btn-tactical-primary" onclick="window.app.downloadPdfFile('${encodeURIComponent(viewerUrl)}', '${encodeURIComponent(downloadFilename)}')">
+                    <i class="fa-solid fa-download"></i> คลิกที่นี่เพื่อดาวน์โหลดไฟล์ PDF
+                  </button>
+                </div>
+              </iframe>
+            </object>
           </div>
         </div>
-        <iframe src="${viewerUrl}" style="width: 100%; height: 100%; border: 1px solid var(--border-hairline); background: #222;" title="${safeTitle}"></iframe>
-      </div>
-    `);
+      `;
+    }
+
+    this.openMediaModal(contentHtml, "pdf", `<i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> ${safeTitle}`);
     this.playTacticalBeep(880, "sine", 0.05);
   }
 
@@ -4147,6 +4255,8 @@ const initApp = () => {
     window.resetDefaultQuickCards = () => window.app?.resetDefaultQuickCards();
     window.exportMasterDataJs = () => window.app?.exportMasterDataJs();
     window.importDataJSON = (file) => window.app?.importDataJSON(file);
+    window.openPdfModal = (url, title) => window.app?.openPdfModal(url, title);
+    window.downloadPdfFile = (url, filename) => window.app?.downloadPdfFile(url, filename);
   }
 };
 
