@@ -201,18 +201,101 @@ class PortfolioApp {
     return this.healBrokenImageUrls(fallback);
   }
 
+  createLightweightDataCopy(data) {
+    if (!data) return data;
+    const copy = JSON.parse(JSON.stringify(data));
+    const processAtt = (att) => {
+      if (att && att.url && typeof att.url === "string" && att.url.startsWith("data:") && att.url.length > 50000) {
+        if (att.assetId) {
+          att.url = "indexeddb:" + att.assetId;
+        } else {
+          const fallbackId = `asset_auto_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+          att.assetId = fallbackId;
+          const origData = att.url;
+          att.url = "indexeddb:" + fallbackId;
+          if (window.assetDB) {
+            window.assetDB.ensureDB().then(db => {
+              const tx = db.transaction(["uploaded_assets"], "readwrite");
+              tx.objectStore("uploaded_assets").put({
+                id: fallbackId,
+                name: att.name || "attachment",
+                size: att.size || origData.length,
+                type: att.type === "pdf" ? "application/pdf" : "image/jpeg",
+                category: att.type === "pdf" ? "document" : "image",
+                createdAt: new Date().toISOString(),
+                data: origData
+              });
+            }).catch(e => console.warn("AssetDB auto-fallback save error:", e));
+          }
+        }
+      }
+    };
+
+    if (Array.isArray(copy.activities)) {
+      copy.activities.forEach(a => {
+        if (Array.isArray(a.attachments)) a.attachments.forEach(processAtt);
+      });
+    }
+
+    if (Array.isArray(copy.courses)) {
+      copy.courses.forEach(c => {
+        if (Array.isArray(c.artifacts)) {
+          c.artifacts.forEach(art => {
+            if (Array.isArray(art.attachments)) art.attachments.forEach(processAtt);
+            if (art.fileUrl && typeof art.fileUrl === "string" && art.fileUrl.startsWith("data:") && art.fileUrl.length > 50000) {
+              if (art.assetId) {
+                art.fileUrl = "indexeddb:" + art.assetId;
+              } else {
+                const fallbackId = `asset_art_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+                art.assetId = fallbackId;
+                const origData = art.fileUrl;
+                art.fileUrl = "indexeddb:" + fallbackId;
+                if (window.assetDB) {
+                  window.assetDB.ensureDB().then(db => {
+                    const tx = db.transaction(["uploaded_assets"], "readwrite");
+                    tx.objectStore("uploaded_assets").put({
+                      id: fallbackId,
+                      name: art.name || "artifact",
+                      size: origData.length,
+                      type: "application/pdf",
+                      category: "document",
+                      createdAt: new Date().toISOString(),
+                      data: origData
+                    });
+                  }).catch(e => console.warn("AssetDB auto-fallback save error:", e));
+                }
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return copy;
+  }
+
   saveData() {
     try {
       this.data.lastUpdated = new Date().toISOString();
-      localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+      } catch (storageErr) {
+        console.warn("localStorage quota exceeded, saving lightweight copy with IndexedDB references:", storageErr);
+        const slimData = this.createLightweightDataCopy(this.data);
+        localStorage.setItem(this.storageKey, JSON.stringify(slimData));
+      }
       this.updateStatusTelemetry();
 
       // Realtime cross-tab broadcast bus
       if (this.broadcastChannel) {
         try {
+          const payloadStr = JSON.stringify(this.data);
+          const broadcastPayload = (payloadStr.length > 1500000)
+            ? this.createLightweightDataCopy(this.data)
+            : this.data;
           this.broadcastChannel.postMessage({
             type: "DATA_SYNC",
-            payload: this.data
+            payload: broadcastPayload
           });
         } catch (err) {
           console.warn("BroadcastChannel error:", err);
@@ -220,9 +303,13 @@ class PortfolioApp {
       }
 
       if (this.supabaseClient) {
+        const payloadStr = JSON.stringify(this.data);
+        const cloudPayload = (payloadStr.length > 1500000)
+          ? this.createLightweightDataCopy(this.data)
+          : this.data;
         this.supabaseClient
           .from("portfolio_data")
-          .upsert({ id: "main_data", payload: this.data, updated_at: new Date().toISOString() })
+          .upsert({ id: "main_data", payload: cloudPayload, updated_at: new Date().toISOString() })
           .then(({ error }) => {
             if (!error) this.updateStatusTelemetry("SUPABASE: SYNCED");
           })
@@ -2750,16 +2837,34 @@ class PortfolioApp {
     a.remove();
   }
 
-  openMediaModal(contentHtml) {
+  openMediaModal(contentHtml, customMode = null) {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
+    const dialog = modal?.querySelector(".admin-login-dialog");
     if (!modal || !container) return;
     container.innerHTML = contentHtml;
-    if (contentHtml.includes("<iframe") || contentHtml.includes("<video")) {
+
+    if (customMode === "pdf" || contentHtml.includes("fa-file-pdf") || contentHtml.includes("download=")) {
+      if (dialog) {
+        dialog.style.maxWidth = "960px";
+        dialog.style.width = "95vw";
+      }
+      container.style.aspectRatio = "unset";
+      container.style.height = "75vh";
+      container.style.minHeight = "500px";
+    } else if (contentHtml.includes("<iframe") || contentHtml.includes("<video")) {
+      if (dialog) {
+        dialog.style.maxWidth = "800px";
+        dialog.style.width = "95%";
+      }
       container.style.aspectRatio = "16/9";
       container.style.minHeight = "auto";
       container.style.height = "auto";
     } else {
+      if (dialog) {
+        dialog.style.maxWidth = "800px";
+        dialog.style.width = "95%";
+      }
       container.style.aspectRatio = "unset";
       container.style.minHeight = "460px";
       container.style.height = "auto";
@@ -2770,9 +2875,16 @@ class PortfolioApp {
   closeMediaModal() {
     const modal = document.getElementById("mediaPlayerModal");
     const container = document.getElementById("mediaModalContainer");
+    const dialog = modal?.querySelector(".admin-login-dialog");
     if (container) {
       container.innerHTML = "";
       container.style.aspectRatio = "16/9";
+      container.style.height = "auto";
+      container.style.minHeight = "auto";
+    }
+    if (dialog) {
+      dialog.style.maxWidth = "800px";
+      dialog.style.width = "95%";
     }
     if (modal) modal.classList.remove("open");
   }
@@ -3137,7 +3249,7 @@ class PortfolioApp {
           <button type="button" class="btn-quick-upload btn-pdf-upload" onclick="document.getElementById('batchPdfFileInput').click()" title="เลือกไฟล์ PDF ได้หลายไฟล์พร้อมกัน">
             <i class="fa-solid fa-file-pdf"></i> 📄 + เลือกไฟล์ PDF (หลายไฟล์)
           </button>
-          <input type="file" id="batchPdfFileInput" accept="application/pdf" multiple style="display: none;" onchange="window.app.handleBatchPdfSelect(this.files)">
+          <input type="file" id="batchPdfFileInput" accept=".pdf,application/pdf,application/x-pdf,application/acrobat,applications/vnd.pdf,text/pdf,text/x-pdf" multiple style="display: none;" onchange="window.app.handleBatchPdfSelect(this.files)">
 
           <button type="button" class="btn-quick-upload btn-yt-upload" onclick="window.app.toggleYouTubeInputBar()" title="เพิ่มคลิปวิดีโอจาก YouTube">
             <i class="fa-brands fa-youtube"></i> 🎥 + ลิงก์ YouTube
@@ -3146,6 +3258,9 @@ class PortfolioApp {
           <button type="button" class="btn-quick-upload btn-url-upload" onclick="window.app.toggleUrlInputBar()" title="ใส่ลิงก์รูปภาพหรือไฟล์จาก URL ตรง">
             <i class="fa-solid fa-link"></i> 🌐 + ใส่ลิงก์ URL ตรง
           </button>
+
+          <!-- Hidden Universal File Picker for Dropzone (Accepts both images and PDFs) -->
+          <input type="file" id="batchUniversalFileInput" accept="image/*,.pdf,application/pdf,application/x-pdf,application/acrobat,applications/vnd.pdf" multiple style="display: none;" onchange="window.app.handleUniversalBatchSelect(this.files)">
         </div>
 
         <!-- YouTube Quick Input Bar -->
@@ -3169,12 +3284,12 @@ class PortfolioApp {
           <button type="button" class="btn-doc-del" onclick="window.app.toggleUrlInputBar(false)">✕</button>
         </div>
 
-        <!-- Drag & Drop Dropzone -->
+        <!-- Drag & Drop Dropzone (Works for both images and PDFs on Click or Drag) -->
         <div class="super-dropzone" id="attSuperDropzone" 
              ondragover="window.app.handleDropzoneDragOver(event)" 
              ondragleave="window.app.handleDropzoneDragLeave(event)" 
              ondrop="window.app.handleDropzoneDrop(event)"
-             onclick="document.getElementById('batchImageFileInput').click()">
+             onclick="document.getElementById('batchUniversalFileInput').click()">
           <i class="fa-solid fa-cloud-arrow-up"></i>
           <div class="dropzone-text">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์รูปภาพ / PDF จากคอมพิวเตอร์มาวางตรงนี้ได้ทันที</div>
           <div class="dropzone-sub">สามารถเลือกหลายไฟล์พร้อมกันได้เลย (รองรับ JPG, PNG, WEBP, PDF)</div>
@@ -3248,11 +3363,12 @@ class PortfolioApp {
           <div class="attachment-files-list">
             ${pdfAtts.map((att) => {
               const globalIdx = list.indexOf(att);
+              const sizeStr = att.size ? ` <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">(${(att.size > 1024 * 1024) ? (att.size / (1024 * 1024)).toFixed(2) + ' MB' : (att.size / 1024).toFixed(1) + ' KB'})</span>` : "";
               return `
                 <div class="doc-item-row">
                   <div class="doc-item-left">
                     <i class="fa-solid fa-file-pdf" style="color: #ef5350; font-size: 1.1rem;"></i>
-                    <span class="doc-item-title">${this.escapeHtml(att.name || 'เอกสาร PDF')}</span>
+                    <span class="doc-item-title">${this.escapeHtml(att.name || 'เอกสาร PDF')}${sizeStr}</span>
                   </div>
                   <div class="doc-item-actions">
                     <button type="button" class="btn-dock" style="font-size: 0.7rem; padding: 2px 8px;" onclick="window.app.openPdfModal('${encodeURIComponent(att.url)}', '${encodeURIComponent(att.name || 'PDF')}')">
@@ -3303,11 +3419,22 @@ class PortfolioApp {
     const files = Array.from(fileList);
     for (const file of files) {
       try {
+        let assetId = null;
+        if (window.assetDB && file.size > 150000) {
+          try {
+            const saved = await window.assetDB.saveAsset(file, "image");
+            if (saved && saved.id) assetId = saved.id;
+          } catch (e) {
+            console.warn("AssetDB image save error:", e);
+          }
+        }
         const dataUrl = await this.readFileAsDataURL(file);
         this.currentEditingAttachments.push({
           id: `att_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
           type: "image",
           name: file.name,
+          size: file.size,
+          assetId: assetId,
           url: dataUrl
         });
       } catch (err) {
@@ -3328,12 +3455,34 @@ class PortfolioApp {
     const files = Array.from(fileList);
     for (const file of files) {
       try {
-        const dataUrl = await this.readFileAsDataURL(file);
+        let assetId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
+        let dataUrl = "";
+
+        // 1. Read file as Data URL
+        dataUrl = await this.readFileAsDataURL(file);
+
+        // 2. Persist to IndexedDB assetDB for permanent zero-limit storage
+        if (window.assetDB) {
+          try {
+            const saved = await window.assetDB.saveAsset(file, "document", assetId);
+            if (saved && saved.id) {
+              assetId = saved.id;
+            }
+          } catch (dbErr) {
+            console.warn("Could not save PDF to AssetDB:", dbErr);
+          }
+        }
+
+        // Keep indexeddb: pointer if saved in assetDB to guarantee 0 quota issues
+        const finalUrl = (window.assetDB && assetId) ? `indexeddb:${assetId}` : dataUrl;
+
         this.currentEditingAttachments.push({
           id: `att_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
           type: "pdf",
           name: file.name,
-          url: dataUrl
+          size: file.size,
+          assetId: assetId,
+          url: finalUrl
         });
       } catch (err) {
         console.error("Failed to read PDF file:", err);
@@ -3344,6 +3493,41 @@ class PortfolioApp {
     this.playTacticalBeep(920, "sine", 0.08);
     const inp = document.getElementById("batchPdfFileInput");
     if (inp) inp.value = "";
+  }
+
+  async handleUniversalBatchSelect(fileList) {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    const imgFiles = [];
+    const pdfFiles = [];
+
+    for (const f of files) {
+      const isPdf = (f.type && (f.type === "application/pdf" || f.type.toLowerCase().includes("pdf"))) ||
+                    (f.name && f.name.toLowerCase().endsWith(".pdf"));
+      const isImg = (f.type && f.type.startsWith("image/")) ||
+                    (f.name && /\.(jpe?g|png|webp|gif|svg|bmp|ico)$/i.test(f.name));
+
+      if (isPdf) {
+        pdfFiles.push(f);
+      } else if (isImg) {
+        imgFiles.push(f);
+      } else {
+        if (f.name && f.name.toLowerCase().endsWith(".pdf")) {
+          pdfFiles.push(f);
+        } else {
+          imgFiles.push(f);
+        }
+      }
+    }
+
+    if (imgFiles.length > 0) {
+      await this.handleBatchImageSelect(imgFiles);
+    }
+    if (pdfFiles.length > 0) {
+      await this.handleBatchPdfSelect(pdfFiles);
+    }
+    const uniInput = document.getElementById("batchUniversalFileInput");
+    if (uniInput) uniInput.value = "";
   }
 
   readFileAsDataURL(file) {
@@ -3377,25 +3561,7 @@ class PortfolioApp {
 
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
-
-    const imgFiles = [];
-    const pdfFiles = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      if (f.type.startsWith("image/")) {
-        imgFiles.push(f);
-      } else if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
-        pdfFiles.push(f);
-      }
-    }
-
-    if (imgFiles.length > 0) {
-      await this.handleBatchImageSelect(imgFiles);
-    }
-    if (pdfFiles.length > 0) {
-      await this.handleBatchPdfSelect(pdfFiles);
-    }
+    await this.handleUniversalBatchSelect(files);
   }
 
   toggleYouTubeInputBar(show = null) {
@@ -3622,21 +3788,69 @@ class PortfolioApp {
     this.playTacticalBeep(700, "sine", 0.03);
   }
 
-  openPdfModal(rawUrl, rawTitle) {
-    const url = decodeURIComponent(rawUrl);
+  dataURLtoBlob(dataurl, forceType = null) {
+    try {
+      const arr = dataurl.split(",");
+      let mime = forceType || arr[0].match(/:(.*?);/)?.[1] || "application/pdf";
+      if (!forceType && (mime === "application/octet-stream" || !mime)) {
+        mime = "application/pdf";
+      }
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (e) {
+      console.warn("Could not convert dataURL to Blob:", e);
+      return null;
+    }
+  }
+
+  async openPdfModal(rawUrl, rawTitle) {
+    let url = decodeURIComponent(rawUrl || "");
     const title = decodeURIComponent(rawTitle || "เอกสาร PDF");
+
+    // 1. Resolve indexeddb: URLs from local AssetDB
+    if (url.startsWith("indexeddb:")) {
+      const assetId = url.replace("indexeddb:", "").trim();
+      if (window.assetDB) {
+        try {
+          const asset = await window.assetDB.getAsset(assetId);
+          if (asset && asset.data) {
+            url = asset.data;
+          }
+        } catch (dbErr) {
+          console.warn("Could not resolve asset from IndexedDB:", dbErr);
+        }
+      }
+    }
+
+    // 2. Convert Data URL to clean native Blob URL to prevent browser navigation blocking
+    let viewerUrl = url;
+    if (url.startsWith("data:")) {
+      const blob = this.dataURLtoBlob(url, "application/pdf");
+      if (blob) {
+        viewerUrl = URL.createObjectURL(blob);
+      }
+    }
+
+    const safeTitle = this.escapeHtml(title);
+    const downloadFilename = safeTitle.toLowerCase().endsWith(".pdf") ? safeTitle : `${safeTitle}.pdf`;
+
     this.openMediaModal(`
       <div style="display: flex; flex-direction: column; gap: 10px; width: 90vw; max-width: 950px; height: 80vh;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
           <span style="font-family: var(--font-mono); color: var(--accent-amber); font-weight: 700;">
-            <i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> ${this.escapeHtml(title)}
+            <i class="fa-solid fa-file-pdf" style="color: #ef5350;"></i> ${safeTitle}
           </span>
           <div style="display: flex; gap: 8px;">
-            <a href="${url}" target="_blank" download class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-download"></i> ดาวน์โหลด PDF</a>
-            <a href="${url}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่</a>
+            <a href="${viewerUrl}" download="${downloadFilename}" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-download"></i> ดาวน์โหลด PDF</a>
+            <a href="${viewerUrl}" target="_blank" class="btn-dock" style="font-size: 0.75rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่</a>
           </div>
         </div>
-        <iframe src="${url}" style="width: 100%; height: 100%; border: 1px solid var(--border-hairline); background: #222;" title="${this.escapeHtml(title)}"></iframe>
+        <iframe src="${viewerUrl}" style="width: 100%; height: 100%; border: 1px solid var(--border-hairline); background: #222;" title="${safeTitle}"></iframe>
       </div>
     `);
     this.playTacticalBeep(880, "sine", 0.05);
