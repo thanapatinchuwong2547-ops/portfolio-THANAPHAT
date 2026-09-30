@@ -79,13 +79,29 @@ class PortfolioApp {
             panel3: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel3), ...((parsed.dashboard && parsed.dashboard.panel3) || {}) },
             panel4: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.dashboard && window.DEFAULT_PORTFOLIO_DATA.dashboard.panel4), ...((parsed.dashboard && parsed.dashboard.panel4) || {}) }
           },
+          courses: (Array.isArray(parsed.courses) && parsed.courses.length > 0)
+            ? parsed.courses
+            : (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.courses ? window.DEFAULT_PORTFOLIO_DATA.courses : []),
+          activities: (Array.isArray(parsed.activities) && parsed.activities.length > 0)
+            ? parsed.activities
+            : (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.activities ? window.DEFAULT_PORTFOLIO_DATA.activities : []),
+          skills: (Array.isArray(parsed.skills) && parsed.skills.length > 0)
+            ? parsed.skills
+            : (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.skills ? window.DEFAULT_PORTFOLIO_DATA.skills : []),
+          education: (Array.isArray(parsed.education) && parsed.education.length > 0)
+            ? parsed.education
+            : (window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.education ? window.DEFAULT_PORTFOLIO_DATA.education : []),
           quickCards: (Array.isArray(parsed.quickCards) && parsed.quickCards.length > 0)
             ? parsed.quickCards
-            : JSON.parse(JSON.stringify(defaultQuickCards))
+            : JSON.parse(JSON.stringify(defaultQuickCards)),
+          lastUpdated: parsed.lastUpdated || new Date().toISOString()
         };
-        if (!merged.profile.heroWhiteTitle || merged.profile.heroTitle.includes("\n") || merged.profile.heroTitle === "ENGINEERING POWER.") {
-          merged.profile.heroTitle = "WELCOME TO PORTFOLIO";
-          merged.profile.heroWhiteTitle = "THANAPHAT INCHUWONG";
+
+        if (!merged.profile.heroTitle) {
+          merged.profile.heroTitle = window.DEFAULT_PORTFOLIO_DATA?.profile?.heroTitle || "WELCOME TO PORTFOLIO";
+        }
+        if (!merged.profile.heroWhiteTitle) {
+          merged.profile.heroWhiteTitle = window.DEFAULT_PORTFOLIO_DATA?.profile?.heroWhiteTitle || "THANAPHAT INCHUWONG";
         }
         return merged;
       }
@@ -105,10 +121,22 @@ class PortfolioApp {
       localStorage.setItem(this.storageKey, JSON.stringify(this.data));
       this.updateStatusTelemetry();
 
+      // Realtime cross-tab broadcast bus
+      if (this.broadcastChannel) {
+        try {
+          this.broadcastChannel.postMessage({
+            type: "DATA_SYNC",
+            payload: this.data
+          });
+        } catch (err) {
+          console.warn("BroadcastChannel error:", err);
+        }
+      }
+
       if (this.supabaseClient) {
         this.supabaseClient
           .from("portfolio_data")
-          .upsert({ id: "main_data", payload: this.data, updated_at: new Date() })
+          .upsert({ id: "main_data", payload: this.data, updated_at: new Date().toISOString() })
           .then(({ error }) => {
             if (!error) this.updateStatusTelemetry("SUPABASE: SYNCED");
           })
@@ -116,6 +144,76 @@ class PortfolioApp {
       }
     } catch (e) {
       console.error("Failed to save data locally:", e);
+    }
+  }
+
+  setupRealtimeSync() {
+    // 1. BroadcastChannel: zero-latency cross-tab/cross-page synchronization
+    if ("BroadcastChannel" in window) {
+      try {
+        this.broadcastChannel = new BroadcastChannel("thanaphat_portfolio_bus");
+        this.broadcastChannel.onmessage = (event) => {
+          if (event.data && event.data.type === "DATA_SYNC" && event.data.payload) {
+            console.log("[Realtime Bus] Syncing fresh data from active tab");
+            this.data = event.data.payload;
+            this.renderAll();
+            this.updateStatusTelemetry("REALTIME: LIVE_SYNC");
+          }
+        };
+      } catch (err) {
+        console.warn("BroadcastChannel initialization warning:", err);
+      }
+    }
+
+    // 2. Storage event listener (fires across tabs on localStorage change)
+    window.addEventListener("storage", (e) => {
+      if (e.key === this.storageKey && e.newValue) {
+        try {
+          const freshData = JSON.parse(e.newValue);
+          console.log("[Storage Event] Realtime sync from storage update");
+          this.data = freshData;
+          this.renderAll();
+          this.updateStatusTelemetry("STORAGE: LIVE_SYNC");
+        } catch (err) {
+          console.warn("Storage sync parse error:", err);
+        }
+      }
+    });
+
+    // 3. Tab visibility & focus sync
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        this.checkAndReloadLatestData();
+      }
+    });
+    window.addEventListener("focus", () => {
+      this.checkAndReloadLatestData();
+    });
+
+    // 4. Beforeunload flush
+    window.addEventListener("beforeunload", () => {
+      if (this.isEditing) {
+        document.querySelectorAll("[data-cms-key]").forEach((el) => {
+          this.saveCmsElement(el);
+        });
+      }
+    });
+  }
+
+  checkAndReloadLatestData() {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.lastUpdated && parsed.lastUpdated !== this.data.lastUpdated) {
+          console.log("[Focus Sync] Newer data found in storage, reloading");
+          this.data = this.loadData();
+          this.renderAll();
+          this.updateStatusTelemetry("AUTO_RELOADED");
+        }
+      }
+    } catch (e) {
+      console.warn("Focus reload error:", e);
     }
   }
 
@@ -138,6 +236,7 @@ class PortfolioApp {
     this.startTimecodeTicker();
     this.renderSegmentedBars();
     this.renderCadBlueprint();
+    this.setupRealtimeSync();
     this.initSupabase();
 
     if (sessionStorage.getItem(this.authKey) === "authenticated") {
@@ -2164,6 +2263,26 @@ class PortfolioApp {
     alert("ออกจากระบบผู้ดูแลเรียบร้อยแล้ว");
   }
 
+  saveCmsElement(el) {
+    if (!el) return;
+    const keyAttr = el.getAttribute("data-cms-key");
+    if (!keyAttr) return;
+    const keyPath = keyAttr.split(".");
+    let ref = this.data;
+    for (let i = 0; i < keyPath.length - 1; i++) {
+      if (!ref[keyPath[i]] || typeof ref[keyPath[i]] !== "object") {
+        ref[keyPath[i]] = {};
+      }
+      ref = ref[keyPath[i]];
+    }
+    const val = (el.tagName === "INPUT" || el.tagName === "TEXTAREA") ? el.value : el.innerText.trim();
+    const finalKey = keyPath[keyPath.length - 1];
+    if (ref[finalKey] !== val) {
+      ref[finalKey] = val;
+      this.saveData();
+    }
+  }
+
   toggleInlineEdit() {
     this.isEditing = !this.isEditing;
     const statusText = document.getElementById("inlineEditStatus");
@@ -2174,23 +2293,32 @@ class PortfolioApp {
 
       document.querySelectorAll("[data-cms-key]").forEach((el) => {
         el.setAttribute("contenteditable", "true");
+        el.setAttribute("spellcheck", "false");
 
+        // Save real-time on input (debounced 350ms)
+        el.oninput = () => {
+          clearTimeout(this.inlineEditDebounce);
+          this.inlineEditDebounce = setTimeout(() => {
+            this.saveCmsElement(el);
+          }, 350);
+        };
+
+        // Save immediately on blur
         el.onblur = () => {
-          const keyPath = el.getAttribute("data-cms-key").split(".");
-          let ref = this.data;
-          for (let i = 0; i < keyPath.length - 1; i++) {
-            ref = ref[keyPath[i]];
-          }
-          ref[keyPath[keyPath.length - 1]] = el.innerText.trim();
-          this.saveData();
+          clearTimeout(this.inlineEditDebounce);
+          this.saveCmsElement(el);
         };
       });
-      alert("เปิดโหมดแก้ไขเนื้อหา: คุณสามารถคลิกข้อความใดก็ได้บนหน้าเว็บเพื่อแก้ไขโดยตรง และระบบจะบันทึกอัตโนมัติ!");
+      alert("เปิดโหมดแก้ไขเนื้อหา: คุณสามารถคลิกข้อความใดก็ได้บนหน้าเว็บเพื่อแก้ไขโดยตรง และระบบจะบันทึกซิงค์แบบเรียลไทม์อัตโนมัติ!");
     } else {
       document.body.classList.remove("editable-active");
       if (statusText) statusText.textContent = "แก้ไขเนื้อหา (OFF)";
+      clearTimeout(this.inlineEditDebounce);
       document.querySelectorAll("[data-cms-key]").forEach((el) => {
+        this.saveCmsElement(el);
         el.removeAttribute("contenteditable");
+        el.oninput = null;
+        el.onblur = null;
       });
     }
   }
@@ -2286,12 +2414,15 @@ class PortfolioApp {
             <label class="form-label">SUPABASE ANON / PUBLIC KEY</label>
             <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." value="${s.anonKey || ""}">
           </div>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
             <button class="btn-tactical btn-tactical-primary" onclick="window.app.saveAndTestSupabase()">
-              <i class="fa-solid fa-plug"></i> ทดสอบและเชื่อมต่อ
+              <i class="fa-solid fa-plug"></i> ทดสอบและเชื่อมต่อ Realtime
             </button>
             <button class="btn-tactical btn-tactical-ghost" onclick="window.app.syncDataToSupabase()">
-              <i class="fa-solid fa-cloud-arrow-up"></i> อัปโหลดข้อมูลขึ้น Supabase
+              <i class="fa-solid fa-cloud-arrow-up"></i> อัปโหลดข้อมูลขึ้น Cloud
+            </button>
+            <button class="btn-tactical btn-tactical-ghost" onclick="window.app.loadFromSupabase().then(() => alert('ดึงข้อมูลล่าสุดจาก Supabase Cloud เรียบร้อยแล้ว!'))">
+              <i class="fa-solid fa-cloud-arrow-down"></i> ดึงข้อมูลสดจาก Cloud
             </button>
           </div>
           <div id="supabaseStatusAlert" style="font-family: var(--font-mono); font-size: 0.8rem; margin-top: 6px;"></div>
@@ -2564,6 +2695,44 @@ class PortfolioApp {
     }
   }
 
+  exportMasterDataJs() {
+    const cleanData = JSON.parse(JSON.stringify(this.data));
+    const jsContent = `// Data store for Thanaphat Inchuwong Portfolio\n// Auto-synced with localStorage, IndexedDB, and Supabase\n\nconst DEFAULT_PORTFOLIO_DATA = ${JSON.stringify(cleanData, null, 2)};\n\nwindow.DEFAULT_PORTFOLIO_DATA = DEFAULT_PORTFOLIO_DATA;\n`;
+    const blob = new Blob([jsContent], { type: "text/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.js";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.playTacticalBeep(920, "triangle", 0.1);
+    alert("ระบบสร้างและดาวน์โหลดไฟล์ data.js สำเร็จเรียบร้อยแล้ว!\n(คุณสามารถนำไฟล์นี้ไปวางทับ data.js ในโฟลเดอร์โครงการเพื่อใช้เป็นข้อมูลเริ่มต้นได้ทันที)");
+  }
+
+  importDataJSON(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (imported && (imported.profile || imported.courses)) {
+          this.data = imported;
+          this.saveData();
+          this.renderAll();
+          this.playTacticalBeep(950, "sine", 0.12);
+          alert("นำเข้าข้อมูลและอัปเดตระบบเรียลไทม์สำเร็จเรียบร้อยแล้ว!");
+        } else {
+          alert("รูปแบบไฟล์ JSON ไม่ถูกต้อง");
+        }
+      } catch (err) {
+        alert("ไม่สามารถอ่านไฟล์ JSON ได้: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
   async initSupabase() {
     const s = this.data.siteSettings.supabase;
     if (s && s.url && s.anonKey && window.supabase) {
@@ -2571,9 +2740,40 @@ class PortfolioApp {
         this.supabaseClient = window.supabase.createClient(s.url, s.anonKey);
         this.updateStatusTelemetry("SUPABASE: CONNECTED");
         await this.loadFromSupabase();
+        this.setupSupabaseRealtime();
       } catch (e) {
         console.warn("Supabase init error:", e);
       }
+    }
+  }
+
+  setupSupabaseRealtime() {
+    if (!this.supabaseClient || this.supabaseRealtimeChannel) return;
+    try {
+      this.supabaseRealtimeChannel = this.supabaseClient
+        .channel("public:portfolio_data")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "portfolio_data" },
+          (payload) => {
+            console.log("[Supabase Realtime] Cloud change notification received:", payload);
+            if (payload.new && payload.new.payload) {
+              const remoteData = payload.new.payload;
+              this.data = remoteData;
+              localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+              this.renderAll();
+              this.updateStatusTelemetry("SUPABASE: REALTIME_LIVE");
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            console.log("[Supabase Realtime] Successfully subscribed to realtime changes");
+            this.updateStatusTelemetry("SUPABASE: REALTIME_LIVE");
+          }
+        });
+    } catch (e) {
+      console.warn("Supabase Realtime setup warning:", e);
     }
   }
 
@@ -2592,27 +2792,23 @@ class PortfolioApp {
       }
 
       if (data && data.payload) {
-        const remoteUpdated = new Date(data.updated_at || 0).getTime();
-        const localUpdated = new Date(this.data.lastUpdated || 0).getTime();
-        if (remoteUpdated >= localUpdated) {
-          console.log("[Supabase] Synced latest portfolio data from Cloud");
-          const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
-            ? window.DEFAULT_PORTFOLIO_DATA.quickCards
-            : DEFAULT_QUICK_CARDS;
+        console.log("[Supabase] Synced latest portfolio data from Cloud");
+        const defaultQuickCards = (window.DEFAULT_PORTFOLIO_DATA && Array.isArray(window.DEFAULT_PORTFOLIO_DATA.quickCards) && window.DEFAULT_PORTFOLIO_DATA.quickCards.length > 0)
+          ? window.DEFAULT_PORTFOLIO_DATA.quickCards
+          : DEFAULT_QUICK_CARDS;
 
-          this.data = {
-            ...window.DEFAULT_PORTFOLIO_DATA,
-            ...data.payload,
-            profile: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.profile), ...(data.payload.profile || {}) },
-            siteSettings: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.siteSettings), ...(data.payload.siteSettings || {}) },
-            quickCards: (Array.isArray(data.payload.quickCards) && data.payload.quickCards.length > 0)
-              ? data.payload.quickCards
-              : (Array.isArray(this.data.quickCards) && this.data.quickCards.length > 0 ? this.data.quickCards : JSON.parse(JSON.stringify(defaultQuickCards)))
-          };
-          localStorage.setItem(this.storageKey, JSON.stringify(this.data));
-          this.renderAll();
-          this.updateStatusTelemetry("SUPABASE: CLOUD_SYNCED");
-        }
+        this.data = {
+          ...window.DEFAULT_PORTFOLIO_DATA,
+          ...data.payload,
+          profile: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.profile), ...(data.payload.profile || {}) },
+          siteSettings: { ...(window.DEFAULT_PORTFOLIO_DATA && window.DEFAULT_PORTFOLIO_DATA.siteSettings), ...(data.payload.siteSettings || {}) },
+          quickCards: (Array.isArray(data.payload.quickCards) && data.payload.quickCards.length > 0)
+            ? data.payload.quickCards
+            : (Array.isArray(this.data.quickCards) && this.data.quickCards.length > 0 ? this.data.quickCards : JSON.parse(JSON.stringify(defaultQuickCards)))
+        };
+        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+        this.renderAll();
+        this.updateStatusTelemetry("SUPABASE: CLOUD_SYNCED");
       }
     } catch (e) {
       console.warn("Failed to load from Supabase:", e);
@@ -2635,8 +2831,9 @@ class PortfolioApp {
       this.supabaseClient = client;
       this.data.siteSettings.supabase = { url, anonKey: key, enabled: true, lastSync: new Date().toISOString() };
       this.saveData();
+      this.setupSupabaseRealtime();
 
-      alertBox.innerHTML = `<span style="color: var(--signal-online);"><i class="fa-solid fa-check"></i> เชื่อมต่อ Supabase สำเร็จแล้ว! พร้อมซิงค์</span>`;
+      alertBox.innerHTML = `<span style="color: var(--signal-online);"><i class="fa-solid fa-check"></i> เชื่อมต่อ Supabase สำเร็จแล้ว! พร้อมซิงค์สด Realtime</span>`;
     } catch (e) {
       alertBox.innerHTML = `<span style="color: var(--signal-rec);">เชื่อมต่อไม่สำเร็จ: ${e.message}</span>`;
     }
@@ -3346,4 +3543,6 @@ document.addEventListener("DOMContentLoaded", () => {
   window.app = new PortfolioApp();
   window.openQuickCardModal = (id) => window.app?.openQuickCardModal(id);
   window.resetDefaultQuickCards = () => window.app?.resetDefaultQuickCards();
+  window.exportMasterDataJs = () => window.app?.exportMasterDataJs();
+  window.importDataJSON = (file) => window.app?.importDataJSON(file);
 });
